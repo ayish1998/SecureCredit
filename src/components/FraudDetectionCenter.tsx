@@ -17,6 +17,7 @@ export const FraudDetectionCenter: React.FC = () => {
   const [batchResults, setBatchResults] = useState<FraudPrediction[]>([]);
   const [isProcessingBatch, setIsProcessingBatch] = useState(false);
   const [showBatchModal, setShowBatchModal] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState<string>('');
 
   useEffect(() => {
     // Initialize fraud monitoring
@@ -217,6 +218,21 @@ export const FraudDetectionCenter: React.FC = () => {
     a.download = `fraud_detection_results_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type === 'text/csv') {
+      setUploadedFileName(file.name);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        setCsvData(content);
+      };
+      reader.readAsText(file);
+    } else {
+      alert('Please upload a valid CSV file');
+    }
   };
 
   const getRiskColor = (riskLevel: string) => {
@@ -521,9 +537,30 @@ export const FraudDetectionCenter: React.FC = () => {
                   </div>
                 </div>
                 
-                {/* Sample Data */}
-                <div>
-                  <h4 className="text-white font-medium mb-2">Sample Data</h4>
+                {/* Data Input Options */}
+                <div className="space-y-4">
+                  <h4 className="text-white font-medium">Data Input Options</h4>
+                  
+                  {/* File Upload Option */}
+                  <div className="border border-gray-700 rounded-lg p-4">
+                    <h5 className="text-gray-300 font-medium mb-2">Option 1: Upload CSV File</h5>
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="file"
+                        accept=".csv"
+                        onChange={handleFileUpload}
+                        className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer"
+                      />
+                      {uploadedFileName && (
+                        <span className="text-sm text-green-400">✓ {uploadedFileName}</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">Upload your own CSV file with transaction data</p>
+                  </div>
+                  
+                  {/* Sample Data Option */}
+                  <div className="border border-gray-700 rounded-lg p-4">
+                    <h5 className="text-gray-300 font-medium mb-2">Option 2: Use Sample Data</h5>
                   <button
                     onClick={() => setCsvData(`amount,type,location,merchant_category,agent_id,agent_trust,agent_location,device_id,new_device,device_trust,user_id,last_location,risk_profile,network_trust,pin_attempts
 500,send_money,Accra,unknown,agent_001,0.2,Kumasi,device_new,true,0.1,user_123,Accra,high,0.3,4
@@ -534,19 +571,22 @@ export const FraudDetectionCenter: React.FC = () => {
                   >
                     Load Sample Data
                   </button>
+                    <p className="text-xs text-gray-400 mt-1">Load pre-configured sample data to test the system</p>
+                  </div>
                 </div>
                 
                 {/* CSV Input */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    CSV Data (paste your data here)
+                    CSV Data Preview/Edit
                   </label>
                   <textarea
                     value={csvData}
                     onChange={(e) => setCsvData(e.target.value)}
                     className="w-full h-32 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm font-mono"
-                    placeholder="Paste your CSV data here..."
+                    placeholder="CSV data will appear here after upload or sample data load..."
                   />
+                  <p className="text-xs text-gray-400 mt-1">You can edit the CSV data directly in this text area</p>
                 </div>
                 
                 {/* Process Button */}
@@ -669,6 +709,7 @@ export const FraudDetectionCenter: React.FC = () => {
                   setShowBatchModal(false);
                   setCsvData('');
                   setBatchResults([]);
+                  setUploadedFileName('');
                 }}
                 className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
               >
