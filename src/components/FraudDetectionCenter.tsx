@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Shield, Brain, Zap, Clock, TrendingUp, MapPin, Users, Activity, Upload, FileText, Download } from 'lucide-react';
-import { fraudDetectionAI, fraudMonitor } from '../utils/fraudDetection';
+import { enhancedFraudDetectionAI } from '../utils/enhancedFraudDetection';
 import { Transaction, FraudPrediction, FraudAlert } from '../types/fraud';
 
 export const FraudDetectionCenter: React.FC = () => {
@@ -21,26 +21,10 @@ export const FraudDetectionCenter: React.FC = () => {
 
   useEffect(() => {
     // Initialize fraud monitoring
-    fraudMonitor.startMonitoring();
     setIsMonitoring(true);
 
     // Get model metrics
-    setModelMetrics(fraudDetectionAI.getModelMetrics());
-
-    // Subscribe to fraud alerts
-    fraudMonitor.onFraudAlert((prediction) => {
-      const alert: FraudAlert = {
-        id: `alert_${Date.now()}`,
-        transactionId: prediction.transactionId,
-        alertType: prediction.riskLevel === 'critical' ? 'fraud_detected' : 'suspicious_pattern',
-        severity: prediction.riskLevel,
-        message: `${prediction.riskLevel.toUpperCase()} risk transaction detected: ${prediction.explanation}`,
-        timestamp: new Date().toISOString(),
-        status: 'active'
-      };
-      
-      setRealtimeAlerts(prev => [alert, ...prev.slice(0, 9)]);
-    });
+    setModelMetrics(enhancedFraudDetectionAI.getModelMetrics());
 
     // Simulate real-time transactions for demo
     const interval = setInterval(() => {
@@ -49,11 +33,11 @@ export const FraudDetectionCenter: React.FC = () => {
 
     return () => {
       clearInterval(interval);
-      fraudMonitor.stopMonitoring();
     };
   }, []);
 
   const simulateTransaction = async () => {
+    // Simplified transaction simulation for performance
     const mockTransactions: Transaction[] = [
       {
         id: `txn_${Date.now()}`,
@@ -113,42 +97,66 @@ export const FraudDetectionCenter: React.FC = () => {
     ];
 
     const transaction = mockTransactions[Math.floor(Math.random() * mockTransactions.length)];
-    const prediction = await fraudMonitor.processTransaction(transaction);
     
-    setRecentPredictions(prev => [prediction, ...prev.slice(0, 9)]);
+    try {
+      const prediction = await enhancedFraudDetectionAI.predictFraud(transaction);
+      
+      // Create alert if high risk
+      if (prediction.riskLevel === 'high' || prediction.riskLevel === 'critical') {
+        const alert: FraudAlert = {
+          id: `alert_${Date.now()}`,
+          transactionId: prediction.transactionId,
+          alertType: prediction.riskLevel === 'critical' ? 'fraud_detected' : 'suspicious_pattern',
+          severity: prediction.riskLevel,
+          message: `${prediction.riskLevel.toUpperCase()} risk transaction detected: ${prediction.explanation}`,
+          timestamp: new Date().toISOString(),
+          status: 'active'
+        };
+        
+        setRealtimeAlerts(prev => [alert, ...prev.slice(0, 9)]);
+      }
+      
+      setRecentPredictions(prev => [prediction, ...prev.slice(0, 9)]);
+    } catch (error) {
+      console.error('Error in transaction simulation:', error);
+    }
   };
 
   const testFraudDetection = async () => {
-    const transaction: Transaction = {
-      id: `test_${Date.now()}`,
-      amount: testTransaction.amount || 500,
-      currency: 'GHS',
-      timestamp: new Date().toISOString(),
-      type: testTransaction.type || 'send_money',
-      location: 'Accra, Ghana',
-      merchantCategory: testTransaction.merchantCategory || 'unknown',
-      agentInfo: {
-        id: 'agent_test',
-        trustScore: Math.random(),
-        location: 'Test Location'
-      },
-      deviceFingerprint: {
-        deviceId: 'test_device',
-        isNewDevice: Math.random() > 0.5,
-        trustScore: Math.random()
-      },
-      userProfile: {
-        userId: 'test_user',
-        lastKnownLocation: 'Accra, Ghana',
-        recentTransactions: [],
-        riskProfile: 'medium'
-      },
-      networkTrust: Math.random(),
-      pinAttempts: Math.floor(Math.random() * 5) + 1
-    };
+    try {
+      const transaction: Transaction = {
+        id: `test_${Date.now()}`,
+        amount: testTransaction.amount || 500,
+        currency: 'GHS',
+        timestamp: new Date().toISOString(),
+        type: testTransaction.type || 'send_money',
+        location: 'Accra, Ghana',
+        merchantCategory: testTransaction.merchantCategory || 'unknown',
+        agentInfo: {
+          id: 'agent_test',
+          trustScore: Math.random(),
+          location: 'Test Location'
+        },
+        deviceFingerprint: {
+          deviceId: 'test_device',
+          isNewDevice: Math.random() > 0.5,
+          trustScore: Math.random()
+        },
+        userProfile: {
+          userId: 'test_user',
+          lastKnownLocation: 'Accra, Ghana',
+          recentTransactions: [],
+          riskProfile: 'medium'
+        },
+        networkTrust: Math.random(),
+        pinAttempts: Math.floor(Math.random() * 5) + 1
+      };
 
-    const prediction = await fraudDetectionAI.predictFraud(transaction);
-    setRecentPredictions(prev => [prediction, ...prev.slice(0, 9)]);
+      const prediction = await enhancedFraudDetectionAI.predictFraud(transaction);
+      setRecentPredictions(prev => [prediction, ...prev.slice(0, 9)]);
+    } catch (error) {
+      console.error('Error in fraud detection test:', error);
+    }
   };
 
   const processBatchData = async () => {
@@ -160,48 +168,146 @@ export const FraudDetectionCenter: React.FC = () => {
     
     const results: FraudPrediction[] = [];
     
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim());
+    try {
+      // Process in smaller batches for performance
+      const batchSize = 5;
+      for (let i = 1; i < Math.min(lines.length, 21); i += batchSize) { // Limit to 20 transactions
+        const batch = lines.slice(i, i + batchSize);
+        
+        const batchPromises = batch.map(async (line, batchIndex) => {
+          const values = line.split(',').map(v => v.trim());
+          
+          // Create transaction from CSV data
+          const transaction: Transaction = {
+            id: `batch_${Date.now()}_${i + batchIndex}`,
+            amount: parseFloat(values[headers.indexOf('amount')] || '0'),
+            currency: 'GHS',
+            timestamp: new Date().toISOString(),
+            type: (values[headers.indexOf('type')] || 'send_money') as any,
+            location: values[headers.indexOf('location')] || 'Unknown',
+            merchantCategory: values[headers.indexOf('merchant_category')] || 'unknown',
+            agentInfo: {
+              id: values[headers.indexOf('agent_id')] || 'unknown',
+              trustScore: parseFloat(values[headers.indexOf('agent_trust')] || '0.5'),
+              location: values[headers.indexOf('agent_location')] || 'Unknown'
+            },
+            deviceFingerprint: {
+              deviceId: values[headers.indexOf('device_id')] || 'unknown',
+              isNewDevice: values[headers.indexOf('new_device')] === 'true',
+              trustScore: parseFloat(values[headers.indexOf('device_trust')] || '0.5')
+            },
+            userProfile: {
+              userId: values[headers.indexOf('user_id')] || 'unknown',
+              lastKnownLocation: values[headers.indexOf('last_location')] || 'Unknown',
+              recentTransactions: [],
+              riskProfile: (values[headers.indexOf('risk_profile')] || 'medium') as any
+            },
+            networkTrust: parseFloat(values[headers.indexOf('network_trust')] || '0.5'),
+            pinAttempts: parseInt(values[headers.indexOf('pin_attempts')] || '1')
+          };
+          
+          return await enhancedFraudDetectionAI.predictFraud(transaction);
+        });
+        
+        const batchResults = await Promise.all(batchPromises);
+        results.push(...batchResults);
+        
+        // Add small delay between batches to prevent blocking
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
       
-      // Create transaction from CSV data
-      const transaction: Transaction = {
-        id: `batch_${Date.now()}_${i}`,
-        amount: parseFloat(values[headers.indexOf('amount')] || '0'),
-        currency: 'GHS',
-        timestamp: new Date().toISOString(),
-        type: (values[headers.indexOf('type')] || 'send_money') as any,
-        location: values[headers.indexOf('location')] || 'Unknown',
-        merchantCategory: values[headers.indexOf('merchant_category')] || 'unknown',
-        agentInfo: {
-          id: values[headers.indexOf('agent_id')] || 'unknown',
-          trustScore: parseFloat(values[headers.indexOf('agent_trust')] || '0.5'),
-          location: values[headers.indexOf('agent_location')] || 'Unknown'
-        },
-        deviceFingerprint: {
-          deviceId: values[headers.indexOf('device_id')] || 'unknown',
-          isNewDevice: values[headers.indexOf('new_device')] === 'true',
-          trustScore: parseFloat(values[headers.indexOf('device_trust')] || '0.5')
-        },
-        userProfile: {
-          userId: values[headers.indexOf('user_id')] || 'unknown',
-          lastKnownLocation: values[headers.indexOf('last_location')] || 'Unknown',
-          recentTransactions: [],
-          riskProfile: (values[headers.indexOf('risk_profile')] || 'medium') as any
-        },
-        networkTrust: parseFloat(values[headers.indexOf('network_trust')] || '0.5'),
-        pinAttempts: parseInt(values[headers.indexOf('pin_attempts')] || '1')
-      };
-      
-      const prediction = await fraudDetectionAI.predictFraud(transaction);
-      results.push(prediction);
-      
-      // Add delay to simulate processing
-      await new Promise(resolve => setTimeout(resolve, 100));
+      setBatchResults(results);
+    } catch (error) {
+      console.error('Error processing batch data:', error);
+    } finally {
+      setIsProcessingBatch(false);
     }
-    
-    setBatchResults(results);
-    setIsProcessingBatch(false);
   };
+
+  // const testFraudDetection = async () => {
+  //   const transaction: Transaction = {
+  //     id: `test_${Date.now()}`,
+  //     amount: testTransaction.amount || 500,
+  //     currency: 'GHS',
+  //     timestamp: new Date().toISOString(),
+  //     type: testTransaction.type || 'send_money',
+  //     location: 'Accra, Ghana',
+  //     merchantCategory: testTransaction.merchantCategory || 'unknown',
+  //     agentInfo: {
+  //       id: 'agent_test',
+  //       trustScore: Math.random(),
+  //       location: 'Test Location'
+  //     },
+  //     deviceFingerprint: {
+  //       deviceId: 'test_device',
+  //       isNewDevice: Math.random() > 0.5,
+  //       trustScore: Math.random()
+  //     },
+  //     userProfile: {
+  //       userId: 'test_user',
+  //       lastKnownLocation: 'Accra, Ghana',
+  //       recentTransactions: [],
+  //       riskProfile: 'medium'
+  //     },
+  //     networkTrust: Math.random(),
+  //     pinAttempts: Math.floor(Math.random() * 5) + 1
+  //   };
+
+  //   const prediction = await enhancedFraudDetectionAI.predictFraud(transaction);
+  //   setRecentPredictions(prev => [prediction, ...prev.slice(0, 9)]);
+  // };
+
+  // const processBatchData = async () => {
+  //   if (!csvData.trim()) return;
+    
+  //   setIsProcessingBatch(true);
+  //   const lines = csvData.trim().split('\n');
+  //   const headers = lines[0].split(',').map(h => h.trim());
+    
+  //   const results: FraudPrediction[] = [];
+    
+  //   for (let i = 1; i < lines.length; i++) {
+  //     const values = lines[i].split(',').map(v => v.trim());
+      
+  //     // Create transaction from CSV data
+  //     const transaction: Transaction = {
+  //       id: `batch_${Date.now()}_${i}`,
+  //       amount: parseFloat(values[headers.indexOf('amount')] || '0'),
+  //       currency: 'GHS',
+  //       timestamp: new Date().toISOString(),
+  //       type: (values[headers.indexOf('type')] || 'send_money') as any,
+  //       location: values[headers.indexOf('location')] || 'Unknown',
+  //       merchantCategory: values[headers.indexOf('merchant_category')] || 'unknown',
+  //       agentInfo: {
+  //         id: values[headers.indexOf('agent_id')] || 'unknown',
+  //         trustScore: parseFloat(values[headers.indexOf('agent_trust')] || '0.5'),
+  //         location: values[headers.indexOf('agent_location')] || 'Unknown'
+  //       },
+  //       deviceFingerprint: {
+  //         deviceId: values[headers.indexOf('device_id')] || 'unknown',
+  //         isNewDevice: values[headers.indexOf('new_device')] === 'true',
+  //         trustScore: parseFloat(values[headers.indexOf('device_trust')] || '0.5')
+  //       },
+  //       userProfile: {
+  //         userId: values[headers.indexOf('user_id')] || 'unknown',
+  //         lastKnownLocation: values[headers.indexOf('last_location')] || 'Unknown',
+  //         recentTransactions: [],
+  //         riskProfile: (values[headers.indexOf('risk_profile')] || 'medium') as any
+  //       },
+  //       networkTrust: parseFloat(values[headers.indexOf('network_trust')] || '0.5'),
+  //       pinAttempts: parseInt(values[headers.indexOf('pin_attempts')] || '1')
+  //     };
+      
+  //     const prediction = await enhancedFraudDetectionAI.predictFraud(transaction);
+  //     results.push(prediction);
+      
+  //     // Add delay to simulate processing
+  //     await new Promise(resolve => setTimeout(resolve, 100));
+  //   }
+    
+  //   setBatchResults(results);
+  //   setIsProcessingBatch(false);
+  // };
 
   const downloadBatchResults = () => {
     const csvContent = [
@@ -287,7 +393,7 @@ export const FraudDetectionCenter: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-400">Training Data</p>
-                <p className="text-2xl font-bold text-blue-400">{modelMetrics.trainingDataSize.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-blue-400">{modelMetrics.trainingDataSize?.toLocaleString() || 'N/A'}</p>
               </div>
               <Activity className="w-8 h-8 text-blue-400" />
             </div>
@@ -297,7 +403,7 @@ export const FraudDetectionCenter: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-400">Fraud Patterns</p>
-                <p className="text-2xl font-bold text-purple-400">{modelMetrics.supportedPatterns.length}</p>
+                <p className="text-2xl font-bold text-purple-400">{modelMetrics.supportedPatterns?.length || 0}</p>
               </div>
               <Shield className="w-8 h-8 text-purple-400" />
             </div>
@@ -307,9 +413,7 @@ export const FraudDetectionCenter: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-400">Status</p>
-                <p className="text-lg font-bold text-white">
-                  {modelMetrics.isTraining ? 'Training' : 'Ready'}
-                </p>
+                <p className="text-lg font-bold text-white">Ready</p>
               </div>
               <Zap className="w-8 h-8 text-yellow-400" />
             </div>

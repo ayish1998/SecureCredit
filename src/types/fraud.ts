@@ -37,6 +37,13 @@ export interface FraudPrediction {
   explanation: string;
   recommendedAction: string;
   timestamp: string;
+  mlInsights?: {
+    xgboostScore: number;
+    anomalyScore: number;
+    lstmPattern: string;
+    graphRiskNodes: string[];
+    featureImportance: Map<string, number>;
+  };
 }
 
 export interface FraudPattern {
