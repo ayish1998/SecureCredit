@@ -520,20 +520,6 @@ class EnhancedFingerprintService {
     return Math.min(behavioralRisk, 30);
   }
 
-  private analyzeBehavioralMetrics(): {
-    mouseMovements: number[];
-    keyboardDynamics: number[];
-    scrollPatterns: number[];
-    clickPatterns: number[];
-  } {
-    return {
-      mouseMovements: this.analyzeMouseMovements(),
-      keyboardDynamics: this.analyzeKeyboardDynamics(),
-      scrollPatterns: this.analyzeScrollPatterns(),
-      clickPatterns: this.analyzeClickPatterns()
-    };
-  }
-
   private analyzeMouseMovements(): number[] {
     if (this.behavioralData.mouseMovements.length < 2) return [0, 0, 0];
 
@@ -651,21 +637,7 @@ class EnhancedFingerprintService {
     return 1 - (avgDifference / avgInterval); // Regularity score
   }
 
-  private async detectEnvironmentalFactors(components: any): Promise<{
-    vpnDetected: boolean;
-    proxyDetected: boolean;
-    torDetected: boolean;
-    emulatorDetected: boolean;
-    automationDetected: boolean;
-  }> {
-    return {
-      vpnDetected: this.detectVPNIndicators(components),
-      proxyDetected: await this.detectProxy(),
-      torDetected: await this.detectTor(),
-      emulatorDetected: this.detectEmulationIndicators(components),
-      automationDetected: this.detectAutomation(components)
-    };
-  }
+
 
   private async detectProxy(): Promise<boolean> {
     try {
