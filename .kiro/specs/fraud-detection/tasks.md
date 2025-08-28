@@ -1,6 +1,7 @@
 # Fraud Detection Implementation Tasks
 
-- [ ] 1. Set up core fraud detection interfaces and types
+- [-] 1. Set up core fraud detection interfaces and types
+
   - Create TypeScript interfaces for Transaction, RiskAssessment, and DeviceFingerprint
   - Define enums for TransactionType, RiskLevel, and recommendation types
   - Implement validation schemas for all data models
@@ -36,7 +37,8 @@
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
 - [ ] 4. Create device fingerprinting system
-  - [ ] 4.1 Implement device data collection
+  - [-] 4.1 Implement device data collection
+
     - Build device fingerprint extraction from request headers
     - Create device characteristic analysis functions
     - Implement device change detection algorithms

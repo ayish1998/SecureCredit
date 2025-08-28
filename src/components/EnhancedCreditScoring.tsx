@@ -24,7 +24,8 @@ import {
   Mail,
   Calendar,
   CreditCard,
-  Smartphone
+  Smartphone,
+  X
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -61,7 +62,7 @@ export const EnhancedCreditScoring: React.FC = () => {
   const [selectedProfile, setSelectedProfile] = useState<CreditProfile | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analyzingProfileId, setAnalyzingProfileId] = useState<string | null>(null);
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([]);
   const [newProfile, setNewProfile] = useState<Partial<CreditProfile>>({
     name: '',
@@ -323,7 +324,7 @@ export const EnhancedCreditScoring: React.FC = () => {
   }, []);
 
   const analyzeProfile = async (profile: CreditProfile) => {
-    setIsAnalyzing(true);
+    setAnalyzingProfileId(profile.id);
     setSelectedProfile(profile);
     
     // Simulate AI analysis
@@ -353,7 +354,7 @@ export const EnhancedCreditScoring: React.FC = () => {
     ];
     
     setAiInsights(insights);
-    setIsAnalyzing(false);
+    setAnalyzingProfileId(null);
     setShowDetailModal(true);
   };
 
@@ -439,8 +440,8 @@ export const EnhancedCreditScoring: React.FC = () => {
           }`}>Intelligent credit assessment for unbanked populations</p>
         </div>
         
-        <div className="flex items-center space-x-3">
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1 sm:flex-none sm:w-64">
             <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${
               isDark ? 'text-gray-400' : 'text-gray-500'
             }`} />
@@ -449,7 +450,7 @@ export const EnhancedCreditScoring: React.FC = () => {
               placeholder="Search profiles..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={`pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500 transition-colors duration-300 ${
+              className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500 transition-colors duration-300 ${
                 isDark 
                   ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' 
                   : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
@@ -457,30 +458,33 @@ export const EnhancedCreditScoring: React.FC = () => {
             />
           </div>
           
-          <select
-            value={filterRisk}
-            onChange={(e) => setFilterRisk(e.target.value)}
-            className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500 transition-colors duration-300 ${
-              isDark 
-                ? 'bg-gray-800 border-gray-700 text-white' 
-                : 'bg-white border-gray-300 text-gray-900'
-            }`}
-          >
-            <option value="all">All Risk Levels</option>
-            <option value="Excellent">Excellent</option>
-            <option value="Good">Good</option>
-            <option value="Fair">Fair</option>
-            <option value="Poor">Poor</option>
-            <option value="No Score">No Score</option>
-          </select>
+          <div className="flex gap-3">
+            <select
+              value={filterRisk}
+              onChange={(e) => setFilterRisk(e.target.value)}
+              className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500 transition-colors duration-300 text-sm sm:text-base ${
+                isDark 
+                  ? 'bg-gray-800 border-gray-700 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
+            >
+              <option value="all">All Risks</option>
+              <option value="Excellent">Excellent</option>
+              <option value="Good">Good</option>
+              <option value="Fair">Fair</option>
+              <option value="Poor">Poor</option>
+              <option value="No Score">No Score</option>
+            </select>
 
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add User</span>
-          </button>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm sm:text-base whitespace-nowrap"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden xs:inline sm:hidden">Add</span>
+              <span className="hidden sm:inline">Add User</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -555,90 +559,135 @@ export const EnhancedCreditScoring: React.FC = () => {
         </div>
       </div>
 
-      {/* Credit Profiles Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProfiles.map((profile) => (
-          <div key={profile.id} className={`rounded-xl p-6 border transition-all duration-300 ${
-            isDark 
-              ? 'bg-gray-800 border-gray-700 hover:border-blue-500/50' 
-              : 'bg-white border-gray-200 hover:border-blue-300 shadow-sm hover:shadow-md'
-          }`}>
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-semibold">{profile.name.charAt(0)}</span>
-                </div>
-                <div>
-                  <h3 className={`font-semibold ${
-                    isDark ? 'text-white' : 'text-gray-900'
-                  }`}>{profile.name}</h3>
-                  <p className={`text-sm ${
-                    isDark ? 'text-gray-400' : 'text-gray-600'
-                  }`}>{profile.location}</p>
-                </div>
-              </div>
-              {getTrendIcon(profile.trend)}
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className={`text-sm ${
-                  isDark ? 'text-gray-400' : 'text-gray-600'
-                }`}>Credit Score</span>
-                <span className={`text-lg font-bold ${
-                  isDark ? 'text-white' : 'text-gray-900'
-                }`}>{profile.score}</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className={`text-sm ${
-                  isDark ? 'text-gray-400' : 'text-gray-600'
-                }`}>Risk Level</span>
-                <span className={`px-2 py-1 rounded text-xs font-medium ${getRiskColor(profile.risk)}`}>
-                  {profile.risk}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className={`text-sm ${
-                  isDark ? 'text-gray-400' : 'text-gray-600'
-                }`}>Monthly Income</span>
-                <span className={`text-sm ${
-                  isDark ? 'text-white' : 'text-gray-900'
-                }`}>${profile.monthlyIncome}</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className={`text-sm ${
-                  isDark ? 'text-gray-400' : 'text-gray-600'
-                }`}>Payment History</span>
-                <span className="text-sm text-green-400">{profile.paymentHistory}%</span>
-              </div>
-            </div>
-
-            <div className={`mt-4 pt-4 border-t transition-colors duration-300 ${
-              isDark ? 'border-gray-700' : 'border-gray-200'
+      {/* Credit Profiles List */}
+      <div className={`rounded-xl border transition-colors duration-300 ${
+        isDark 
+          ? 'bg-gray-800 border-gray-700' 
+          : 'bg-white border-gray-200 shadow-sm'
+      }`}>
+        <div className="divide-y divide-gray-200 dark:divide-gray-700">
+          {filteredProfiles.map((profile) => (
+            <div key={profile.id} className={`p-6 transition-colors duration-300 hover:bg-opacity-50 ${
+              isDark 
+                ? 'hover:bg-gray-700' 
+                : 'hover:bg-gray-50'
             }`}>
-              <button
-                onClick={() => analyzeProfile(profile)}
-                disabled={isAnalyzing}
-                className="w-full flex items-center justify-center space-x-2 py-2 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg transition-colors"
-              >
-                {isAnalyzing ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Analyzing...</span>
-                  </>
-                ) : (
-                  <>
-                    <Zap className="w-4 h-4" />
-                    <span>AI Analysis</span>
-                  </>
-                )}
-              </button>
+              <div className="flex items-center justify-between">
+                {/* User Info */}
+                <div className="flex items-center space-x-4 flex-1">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-semibold">{profile.name.charAt(0)}</span>
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <h3 className={`font-semibold truncate ${
+                        isDark ? 'text-white' : 'text-gray-900'
+                      }`}>{profile.name}</h3>
+                      {getTrendIcon(profile.trend)}
+                    </div>
+                    <div className="flex items-center space-x-4 text-sm">
+                      <span className={`${
+                        isDark ? 'text-gray-400' : 'text-gray-600'
+                      }`}>{profile.location}</span>
+                      <span className={`${
+                        isDark ? 'text-gray-400' : 'text-gray-600'
+                      }`}>{profile.phone}</span>
+                      <span className={`${
+                        isDark ? 'text-gray-400' : 'text-gray-600'
+                      }`}>{profile.email}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Credit Info */}
+                <div className="flex items-center space-x-6 flex-shrink-0">
+                  <div className="text-center">
+                    <div className={`text-lg font-bold ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>{profile.score}</div>
+                    <div className={`text-xs ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>Score</div>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className={`px-2 py-1 rounded text-xs font-medium ${getRiskColor(profile.risk)}`}>
+                      {profile.risk}
+                    </div>
+                    <div className={`text-xs mt-1 ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>Risk</div>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className={`text-sm font-medium ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>${profile.monthlyIncome}</div>
+                    <div className={`text-xs ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>Income</div>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="text-sm font-medium text-green-400">{profile.paymentHistory}%</div>
+                    <div className={`text-xs ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>Payment</div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => analyzeProfile(profile)}
+                      disabled={analyzingProfileId !== null}
+                      className="flex items-center space-x-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg transition-colors text-sm"
+                    >
+                      {analyzingProfileId === profile.id ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span className="hidden sm:inline">Analyzing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="w-4 h-4" />
+                          <span className="hidden sm:inline">AI Analysis</span>
+                        </>
+                      )}
+                    </button>
+                    
+                    <button
+                      className={`p-2 rounded-lg transition-colors ${
+                        isDark 
+                          ? 'hover:bg-gray-700 text-gray-400' 
+                          : 'hover:bg-gray-100 text-gray-600'
+                      }`}
+                      title="Edit Profile"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        if (confirm('Are you sure you want to delete this profile?')) {
+                          setCreditProfiles(prev => prev.filter(p => p.id !== profile.id));
+                        }
+                      }}
+                      className={`p-2 rounded-lg transition-colors ${
+                        isDark 
+                          ? 'hover:bg-red-900/20 text-red-400' 
+                          : 'hover:bg-red-50 text-red-600'
+                      }`}
+                      title="Delete Profile"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* Detailed Analysis Modal */}
@@ -813,6 +862,196 @@ export const EnhancedCreditScoring: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add User Modal */}
+      {showAddModal && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowAddModal(false);
+            }
+          }}
+        >
+          <div className={`rounded-2xl border w-full max-w-md max-h-[90vh] overflow-y-auto transition-colors duration-300 ${
+            isDark 
+              ? 'bg-gray-900 border-gray-700' 
+              : 'bg-white border-gray-200'
+          }`}>
+            <div className={`p-6 border-b transition-colors duration-300 ${
+              isDark ? 'border-gray-700' : 'border-gray-200'
+            }`}>
+              <div className="flex items-center justify-between">
+                <h2 className={`text-xl font-bold ${
+                  isDark ? 'text-white' : 'text-gray-900'
+                }`}>Add New User</h2>
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className={`p-2 rounded-lg transition-colors ${
+                    isDark 
+                      ? 'hover:bg-gray-800 text-gray-400' 
+                      : 'hover:bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={(e) => { e.preventDefault(); addNewProfile(); }} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newProfile.name || ''}
+                    onChange={(e) => setNewProfile(prev => ({ ...prev, name: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 transition-colors duration-300 ${
+                      isDark 
+                        ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                    }`}
+                    placeholder="Enter full name"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={newProfile.phone || ''}
+                    onChange={(e) => setNewProfile(prev => ({ ...prev, phone: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 transition-colors duration-300 ${
+                      isDark 
+                        ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                    }`}
+                    placeholder="Enter phone number"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={newProfile.email || ''}
+                  onChange={(e) => setNewProfile(prev => ({ ...prev, email: e.target.value }))}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 transition-colors duration-300 ${
+                    isDark 
+                      ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' 
+                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                  }`}
+                  placeholder="Enter email address"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Monthly Income ($)
+                  </label>
+                  <input
+                    type="number"
+                    value={newProfile.monthlyIncome || ''}
+                    onChange={(e) => setNewProfile(prev => ({ ...prev, monthlyIncome: Number(e.target.value) }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 transition-colors duration-300 ${
+                      isDark 
+                        ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                    }`}
+                    placeholder="Enter monthly income"
+                    min="0"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    value={newProfile.location || ''}
+                    onChange={(e) => setNewProfile(prev => ({ ...prev, location: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 transition-colors duration-300 ${
+                      isDark 
+                        ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                    }`}
+                    placeholder="Enter location"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Mobile Money Provider
+                </label>
+                <select
+                  value={newProfile.mobileMoneyProvider || ''}
+                  onChange={(e) => setNewProfile(prev => ({ ...prev, mobileMoneyProvider: e.target.value }))}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 transition-colors duration-300 ${
+                    isDark 
+                      ? 'bg-gray-800 border-gray-700 text-white' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
+                  required
+                >
+                  <option value="">Select provider</option>
+                  <option value="MTN Mobile Money">MTN Mobile Money</option>
+                  <option value="Airtel Money">Airtel Money</option>
+                  <option value="Orange Money">Orange Money</option>
+                  <option value="Vodafone Cash">Vodafone Cash</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
+                    isDark 
+                      ? 'bg-gray-700 hover:bg-gray-600 text-white' 
+                      : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                >
+                  Add User
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
