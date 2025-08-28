@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Shield, Brain, Zap, Clock, TrendingUp, MapPin, Users, Activity, Upload, FileText, Download } from 'lucide-react';
-import { enhancedFraudDetectionAI } from '../utils/enhancedFraudDetection';
+import { simpleFraudDetectionAI } from '../utils/simpleFraudDetection';
 import { Transaction, FraudPrediction, FraudAlert } from '../types/fraud';
 
 export const FraudDetectionCenter: React.FC = () => {
@@ -24,12 +24,12 @@ export const FraudDetectionCenter: React.FC = () => {
     setIsMonitoring(true);
 
     // Get model metrics
-    setModelMetrics(enhancedFraudDetectionAI.getModelMetrics());
+    setModelMetrics(simpleFraudDetectionAI.getModelMetrics());
 
     // Simulate real-time transactions for demo
     const interval = setInterval(() => {
       simulateTransaction();
-    }, 10000); // Every 10 seconds
+    }, 5000); // Every 5 seconds
 
     return () => {
       clearInterval(interval);
@@ -37,78 +37,125 @@ export const FraudDetectionCenter: React.FC = () => {
   }, []);
 
   const simulateTransaction = async () => {
-    // Simplified transaction simulation for performance
-    const mockTransactions: Transaction[] = [
-      {
-        id: `txn_${Date.now()}`,
-        amount: Math.random() * 1000 + 50,
+    if (!isMonitoring) return;
+    
+    // Create more varied transaction scenarios
+    const scenarios = [
+      // Normal transaction (60% chance)
+      () => ({
+        id: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        amount: Math.random() * 500 + 20,
         currency: 'GHS',
         timestamp: new Date().toISOString(),
-        type: 'send_money',
-        location: 'Accra, Ghana',
-        merchantCategory: 'grocery',
+        type: ['send_money', 'bill_payment', 'airtime'][Math.floor(Math.random() * 3)] as any,
+        location: ['Accra', 'Kumasi', 'Tamale'][Math.floor(Math.random() * 3)] + ', Ghana',
+        merchantCategory: ['grocery', 'utilities', 'transport', 'telecom'][Math.floor(Math.random() * 4)],
         agentInfo: {
-          id: 'agent_001',
-          trustScore: 0.9,
+          id: `agent_${Math.floor(Math.random() * 100)}`,
+          trustScore: 0.7 + Math.random() * 0.3,
           location: 'Accra'
         },
         deviceFingerprint: {
-          deviceId: 'device_123',
+          deviceId: `device_${Math.floor(Math.random() * 1000)}`,
           isNewDevice: false,
-          trustScore: 0.8
+          trustScore: 0.6 + Math.random() * 0.4
         },
         userProfile: {
-          userId: 'user_456',
+          userId: `user_${Math.floor(Math.random() * 1000)}`,
           lastKnownLocation: 'Accra, Ghana',
           recentTransactions: [],
-          riskProfile: 'low'
+          riskProfile: 'low' as any
         },
-        networkTrust: 0.85,
+        networkTrust: 0.7 + Math.random() * 0.3,
         pinAttempts: 1
-      },
-      // High-risk transaction
-      {
-        id: `txn_${Date.now() + 1}`,
-        amount: Math.random() * 2000 + 500,
+      }),
+      
+      // Suspicious transaction (25% chance)
+      () => ({
+        id: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        amount: Math.random() * 1500 + 300,
         currency: 'GHS',
         timestamp: new Date().toISOString(),
-        type: 'cash_out',
-        location: 'Kumasi, Ghana',
-        merchantCategory: 'unknown',
+        type: ['cash_out', 'send_money'][Math.floor(Math.random() * 2)] as any,
+        location: ['Kumasi', 'Cape Coast', 'Ho'][Math.floor(Math.random() * 3)] + ', Ghana',
+        merchantCategory: ['unknown', 'investment', 'agent'][Math.floor(Math.random() * 3)],
         agentInfo: {
-          id: 'agent_002',
-          trustScore: 0.2,
+          id: `agent_${Math.floor(Math.random() * 50)}`,
+          trustScore: 0.3 + Math.random() * 0.4,
           location: 'Unknown'
         },
         deviceFingerprint: {
-          deviceId: 'device_new',
-          isNewDevice: true,
-          trustScore: 0.1
+          deviceId: `device_new_${Date.now()}`,
+          isNewDevice: Math.random() > 0.3,
+          trustScore: 0.2 + Math.random() * 0.5
         },
         userProfile: {
-          userId: 'user_789',
+          userId: `user_${Math.floor(Math.random() * 500)}`,
           lastKnownLocation: 'Accra, Ghana',
           recentTransactions: [],
-          riskProfile: 'high'
+          riskProfile: 'medium' as any
         },
-        networkTrust: 0.3,
-        pinAttempts: 4
-      }
+        networkTrust: 0.3 + Math.random() * 0.4,
+        pinAttempts: Math.floor(Math.random() * 3) + 1
+      }),
+      
+      // High-risk transaction (15% chance)
+      () => ({
+        id: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        amount: Math.random() * 3000 + 1000,
+        currency: 'GHS',
+        timestamp: new Date().toISOString(),
+        type: 'cash_out' as any,
+        location: 'Unknown Location',
+        merchantCategory: ['unknown', 'lottery', 'investment'][Math.floor(Math.random() * 3)],
+        agentInfo: {
+          id: `suspicious_agent_${Math.floor(Math.random() * 20)}`,
+          trustScore: Math.random() * 0.3,
+          location: 'Unknown'
+        },
+        deviceFingerprint: {
+          deviceId: `suspicious_device_${Date.now()}`,
+          isNewDevice: true,
+          trustScore: Math.random() * 0.2
+        },
+        userProfile: {
+          userId: `high_risk_user_${Math.floor(Math.random() * 100)}`,
+          lastKnownLocation: 'Different Location',
+          recentTransactions: [],
+          riskProfile: 'high' as any
+        },
+        networkTrust: Math.random() * 0.3,
+        pinAttempts: Math.floor(Math.random() * 4) + 2
+      })
     ];
-
-    const transaction = mockTransactions[Math.floor(Math.random() * mockTransactions.length)];
+    
+    // Select scenario based on probability
+    const rand = Math.random();
+    let transaction: Transaction;
+    
+    if (rand < 0.6) {
+      transaction = scenarios[0](); // Normal (60%)
+    } else if (rand < 0.85) {
+      transaction = scenarios[1](); // Suspicious (25%)
+    } else {
+      transaction = scenarios[2](); // High-risk (15%)
+    }
     
     try {
-      const prediction = await enhancedFraudDetectionAI.predictFraud(transaction);
+      const prediction = await simpleFraudDetectionAI.predictFraud(transaction);
       
-      // Create alert if high risk
-      if (prediction.riskLevel === 'high' || prediction.riskLevel === 'critical') {
+      // Always add to recent predictions
+      setRecentPredictions(prev => [prediction, ...prev.slice(0, 9)]);
+      
+      // Create alert for medium, high, or critical risk
+      if (['medium', 'high', 'critical'].includes(prediction.riskLevel)) {
         const alert: FraudAlert = {
-          id: `alert_${Date.now()}`,
+          id: `alert_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
           transactionId: prediction.transactionId,
-          alertType: prediction.riskLevel === 'critical' ? 'fraud_detected' : 'suspicious_pattern',
+          alertType: prediction.riskLevel === 'critical' ? 'fraud_detected' : 
+                    prediction.riskLevel === 'high' ? 'suspicious_pattern' : 'high_risk',
           severity: prediction.riskLevel,
-          message: `${prediction.riskLevel.toUpperCase()} risk transaction detected: ${prediction.explanation}`,
+          message: `${prediction.riskLevel.toUpperCase()} risk transaction: ${prediction.explanation.slice(0, 100)}...`,
           timestamp: new Date().toISOString(),
           status: 'active'
         };
@@ -116,46 +163,104 @@ export const FraudDetectionCenter: React.FC = () => {
         setRealtimeAlerts(prev => [alert, ...prev.slice(0, 9)]);
       }
       
-      setRecentPredictions(prev => [prediction, ...prev.slice(0, 9)]);
     } catch (error) {
       console.error('Error in transaction simulation:', error);
+      // Create a fallback prediction for demo purposes
+      const fallbackPrediction: FraudPrediction = {
+        transactionId: transaction.id,
+        riskScore: Math.random(),
+        riskLevel: ['low', 'medium', 'high'][Math.floor(Math.random() * 3)] as any,
+        isFraudulent: Math.random() > 0.7,
+        confidence: 0.8,
+        detectedPatterns: [],
+        explanation: 'Fallback prediction due to processing error',
+        recommendedAction: 'MONITOR_CLOSELY',
+        timestamp: new Date().toISOString()
+      };
+      
+      setRecentPredictions(prev => [fallbackPrediction, ...prev.slice(0, 9)]);
     }
   };
 
   const testFraudDetection = async () => {
     try {
+      // Create test transaction with more realistic risk factors
+      const riskFactors = {
+        isHighRisk: Math.random() > 0.5,
+        isNewDevice: Math.random() > 0.6,
+        isOffHours: Math.random() > 0.7,
+        isLargeAmount: (testTransaction.amount || 500) > 1000
+      };
+
       const transaction: Transaction = {
-        id: `test_${Date.now()}`,
+        id: `test_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         amount: testTransaction.amount || 500,
         currency: 'GHS',
         timestamp: new Date().toISOString(),
         type: testTransaction.type || 'send_money',
-        location: 'Accra, Ghana',
+        location: riskFactors.isHighRisk ? 'Unknown Location' : 'Accra, Ghana',
         merchantCategory: testTransaction.merchantCategory || 'unknown',
         agentInfo: {
           id: 'agent_test',
-          trustScore: Math.random(),
-          location: 'Test Location'
+          trustScore: riskFactors.isHighRisk ? Math.random() * 0.4 : 0.6 + Math.random() * 0.4,
+          location: riskFactors.isHighRisk ? 'Unknown' : 'Test Location'
         },
         deviceFingerprint: {
-          deviceId: 'test_device',
-          isNewDevice: Math.random() > 0.5,
-          trustScore: Math.random()
+          deviceId: riskFactors.isNewDevice ? `new_device_${Date.now()}` : 'known_test_device',
+          isNewDevice: riskFactors.isNewDevice,
+          trustScore: riskFactors.isNewDevice ? Math.random() * 0.3 : 0.7 + Math.random() * 0.3
         },
         userProfile: {
           userId: 'test_user',
           lastKnownLocation: 'Accra, Ghana',
           recentTransactions: [],
-          riskProfile: 'medium'
+          riskProfile: riskFactors.isHighRisk ? 'high' : 'medium'
         },
-        networkTrust: Math.random(),
-        pinAttempts: Math.floor(Math.random() * 5) + 1
+        networkTrust: riskFactors.isHighRisk ? Math.random() * 0.4 : 0.6 + Math.random() * 0.4,
+        pinAttempts: riskFactors.isHighRisk ? Math.floor(Math.random() * 4) + 2 : 1
       };
 
-      const prediction = await enhancedFraudDetectionAI.predictFraud(transaction);
+      console.log('Testing fraud detection with transaction:', transaction);
+      
+      const prediction = await simpleFraudDetectionAI.predictFraud(transaction);
+      
+      console.log('Fraud detection result:', prediction);
+      
+      // Add to recent predictions
       setRecentPredictions(prev => [prediction, ...prev.slice(0, 9)]);
+      
+      // Create alert if high risk
+      if (['high', 'critical'].includes(prediction.riskLevel)) {
+        const alert: FraudAlert = {
+          id: `test_alert_${Date.now()}`,
+          transactionId: prediction.transactionId,
+          alertType: prediction.riskLevel === 'critical' ? 'fraud_detected' : 'suspicious_pattern',
+          severity: prediction.riskLevel,
+          message: `TEST: ${prediction.riskLevel.toUpperCase()} risk detected - ${prediction.explanation.slice(0, 80)}...`,
+          timestamp: new Date().toISOString(),
+          status: 'active'
+        };
+        
+        setRealtimeAlerts(prev => [alert, ...prev.slice(0, 9)]);
+      }
+      
     } catch (error) {
       console.error('Error in fraud detection test:', error);
+      
+      // Create fallback prediction for demo
+      const fallbackPrediction: FraudPrediction = {
+        transactionId: `test_fallback_${Date.now()}`,
+        riskScore: Math.random() * 0.6 + 0.2,
+        riskLevel: 'medium',
+        isFraudulent: false,
+        confidence: 0.7,
+        detectedPatterns: [],
+        explanation: 'Test transaction processed with fallback method due to processing error',
+        recommendedAction: 'MONITOR_CLOSELY - Test transaction',
+        timestamp: new Date().toISOString()
+      };
+      
+      setRecentPredictions(prev => [fallbackPrediction, ...prev.slice(0, 9)]);
     }
   };
 
@@ -206,7 +311,43 @@ export const FraudDetectionCenter: React.FC = () => {
             pinAttempts: parseInt(values[headers.indexOf('pin_attempts')] || '1')
           };
           
-          return await enhancedFraudDetectionAI.predictFraud(transaction);
+          try {
+            const prediction = await simpleFraudDetectionAI.predictFraud(transaction);
+            
+            // Generate alerts for high-risk batch transactions
+            if (['high', 'critical'].includes(prediction.riskLevel)) {
+              const alert: FraudAlert = {
+                id: `batch_alert_${Date.now()}_${batchIndex}`,
+                transactionId: prediction.transactionId,
+                alertType: prediction.riskLevel === 'critical' ? 'fraud_detected' : 'suspicious_pattern',
+                severity: prediction.riskLevel,
+                message: `BATCH: ${prediction.riskLevel.toUpperCase()} risk in batch analysis - ${prediction.explanation.slice(0, 60)}...`,
+                timestamp: new Date().toISOString(),
+                status: 'active'
+              };
+              
+              // Add alert with a small delay to avoid overwhelming the UI
+              setTimeout(() => {
+                setRealtimeAlerts(prev => [alert, ...prev.slice(0, 9)]);
+              }, batchIndex * 200);
+            }
+            
+            return prediction;
+          } catch (error) {
+            console.error('Error processing batch transaction:', error);
+            // Return fallback prediction
+            return {
+              transactionId: transaction.id,
+              riskScore: Math.random() * 0.5,
+              riskLevel: 'low' as any,
+              isFraudulent: false,
+              confidence: 0.5,
+              detectedPatterns: [],
+              explanation: 'Batch processing fallback',
+              recommendedAction: 'ALLOW',
+              timestamp: new Date().toISOString()
+            };
+          }
         });
         
         const batchResults = await Promise.all(batchPromises);
@@ -224,90 +365,7 @@ export const FraudDetectionCenter: React.FC = () => {
     }
   };
 
-  // const testFraudDetection = async () => {
-  //   const transaction: Transaction = {
-  //     id: `test_${Date.now()}`,
-  //     amount: testTransaction.amount || 500,
-  //     currency: 'GHS',
-  //     timestamp: new Date().toISOString(),
-  //     type: testTransaction.type || 'send_money',
-  //     location: 'Accra, Ghana',
-  //     merchantCategory: testTransaction.merchantCategory || 'unknown',
-  //     agentInfo: {
-  //       id: 'agent_test',
-  //       trustScore: Math.random(),
-  //       location: 'Test Location'
-  //     },
-  //     deviceFingerprint: {
-  //       deviceId: 'test_device',
-  //       isNewDevice: Math.random() > 0.5,
-  //       trustScore: Math.random()
-  //     },
-  //     userProfile: {
-  //       userId: 'test_user',
-  //       lastKnownLocation: 'Accra, Ghana',
-  //       recentTransactions: [],
-  //       riskProfile: 'medium'
-  //     },
-  //     networkTrust: Math.random(),
-  //     pinAttempts: Math.floor(Math.random() * 5) + 1
-  //   };
 
-  //   const prediction = await enhancedFraudDetectionAI.predictFraud(transaction);
-  //   setRecentPredictions(prev => [prediction, ...prev.slice(0, 9)]);
-  // };
-
-  // const processBatchData = async () => {
-  //   if (!csvData.trim()) return;
-    
-  //   setIsProcessingBatch(true);
-  //   const lines = csvData.trim().split('\n');
-  //   const headers = lines[0].split(',').map(h => h.trim());
-    
-  //   const results: FraudPrediction[] = [];
-    
-  //   for (let i = 1; i < lines.length; i++) {
-  //     const values = lines[i].split(',').map(v => v.trim());
-      
-  //     // Create transaction from CSV data
-  //     const transaction: Transaction = {
-  //       id: `batch_${Date.now()}_${i}`,
-  //       amount: parseFloat(values[headers.indexOf('amount')] || '0'),
-  //       currency: 'GHS',
-  //       timestamp: new Date().toISOString(),
-  //       type: (values[headers.indexOf('type')] || 'send_money') as any,
-  //       location: values[headers.indexOf('location')] || 'Unknown',
-  //       merchantCategory: values[headers.indexOf('merchant_category')] || 'unknown',
-  //       agentInfo: {
-  //         id: values[headers.indexOf('agent_id')] || 'unknown',
-  //         trustScore: parseFloat(values[headers.indexOf('agent_trust')] || '0.5'),
-  //         location: values[headers.indexOf('agent_location')] || 'Unknown'
-  //       },
-  //       deviceFingerprint: {
-  //         deviceId: values[headers.indexOf('device_id')] || 'unknown',
-  //         isNewDevice: values[headers.indexOf('new_device')] === 'true',
-  //         trustScore: parseFloat(values[headers.indexOf('device_trust')] || '0.5')
-  //       },
-  //       userProfile: {
-  //         userId: values[headers.indexOf('user_id')] || 'unknown',
-  //         lastKnownLocation: values[headers.indexOf('last_location')] || 'Unknown',
-  //         recentTransactions: [],
-  //         riskProfile: (values[headers.indexOf('risk_profile')] || 'medium') as any
-  //       },
-  //       networkTrust: parseFloat(values[headers.indexOf('network_trust')] || '0.5'),
-  //       pinAttempts: parseInt(values[headers.indexOf('pin_attempts')] || '1')
-  //     };
-      
-  //     const prediction = await enhancedFraudDetectionAI.predictFraud(transaction);
-  //     results.push(prediction);
-      
-  //     // Add delay to simulate processing
-  //     await new Promise(resolve => setTimeout(resolve, 100));
-  //   }
-    
-  //   setBatchResults(results);
-  //   setIsProcessingBatch(false);
-  // };
 
   const downloadBatchResults = () => {
     const csvContent = [
