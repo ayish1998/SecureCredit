@@ -6,7 +6,7 @@
   [![React](https://img.shields.io/badge/React-18.3.1-blue.svg)](https://reactjs.org/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.5.3-blue.svg)](https://www.typescriptlang.org/)
   [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4.1-38B2AC.svg)](https://tailwindcss.com/)
-  [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+  [![License](https://img.shields.io/badge/License-Apache-Version-2.0-green.svg)](LICENSE)
   [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://github.com/yourusername/securecredit)
 </div>
 
@@ -15,6 +15,7 @@
 **SecureCredit** is an AI-powered financial security platform specifically designed for Africa's mobile money ecosystem. Our platform provides real-time fraud detection and intelligent credit scoring for over 200 million unbanked users across the continent.
 
 ### Key Statistics
+
 - **98.2%** fraud prevention rate
 - **2.8M+** transactions processed daily
 - **15+** African countries supported
@@ -23,6 +24,7 @@
 ## ✨ Features
 
 ### 🧠 AI-Powered Fraud Detection
+
 - Real-time machine learning algorithms
 - Behavioral pattern analysis
 - Device fingerprinting
@@ -30,6 +32,7 @@
 - Instant threat alerts and notifications
 
 ### 📊 Intelligent Credit Scoring
+
 - Alternative credit assessment for unbanked populations
 - Mobile money transaction history analysis
 - Real-time credit score updates
@@ -37,6 +40,7 @@
 - Comprehensive credit reporting
 
 ### 🔒 Advanced Security
+
 - Multi-layered security architecture
 - End-to-end encryption
 - Real-time monitoring dashboard
@@ -44,6 +48,7 @@
 - Cybersecurity threat protection
 
 ### 📱 Mobile-First Design
+
 - Responsive design for all devices
 - Optimized for African mobile networks
 - Progressive Web App capabilities
@@ -53,6 +58,7 @@
 ## 🛠️ Technology Stack
 
 ### Frontend
+
 - **React 18** - Modern UI library with hooks
 - **TypeScript** - Type-safe development
 - **Tailwind CSS** - Utility-first CSS framework
@@ -60,11 +66,13 @@
 - **Vite** - Fast build tool and dev server
 
 ### Development Tools
+
 - **ESLint** - Code linting and quality
 - **PostCSS** - CSS processing
 - **Autoprefixer** - CSS vendor prefixing
 
 ### AI & Analytics
+
 - Advanced machine learning algorithms
 - Real-time data processing
 - Behavioral analytics engine
@@ -73,24 +81,28 @@
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ 
+
+- Node.js 18+
 - npm or yarn package manager
 - Modern web browser
 
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/ayish1998/securecredit.git
    cd securecredit
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Start development server**
+
    ```bash
    npm run dev
    ```
@@ -124,18 +136,21 @@ src/
 ## 🎯 Core Functionality
 
 ### Dashboard Overview
+
 - Real-time transaction monitoring
 - Fraud detection statistics
 - Risk assessment metrics
 - Geographic distribution analysis
 
 ### Fraud Detection Center
+
 - Live alert system
 - AI pattern analysis
 - Behavioral monitoring
 - Device fingerprinting results
 
 ### Credit Scoring System
+
 - Customer credit assessments
 - Risk level categorization
 - Trend analysis
@@ -144,24 +159,26 @@ src/
 ## 🌍 Supported Regions
 
 Currently supporting 15+ African countries including:
+
 - 🇳🇬 Nigeria (34% of transactions)
-- 🇬🇭 Ghana (28% of transactions)  
+- 🇬🇭 Ghana (28% of transactions)
 - 🇰🇪 Kenya (22% of transactions)
 - 🇿🇦 South Africa (16% of transactions)
 
 ## 📊 Performance Metrics
 
-| Metric | Value |
-|--------|-------|
-| Fraud Detection Accuracy | 98.2% |
-| Daily Transactions | 2.8M+ |
-| Response Time | <100ms |
-| Uptime | 99.9% |
-| User Satisfaction | 4.8/5 |
+| Metric                   | Value  |
+| ------------------------ | ------ |
+| Fraud Detection Accuracy | 98.2%  |
+| Daily Transactions       | 2.8M+  |
+| Response Time            | <100ms |
+| Uptime                   | 99.9%  |
+| User Satisfaction        | 4.8/5  |
 
 ## 🔧 Configuration
 
 ### Environment Variables
+
 Create a `.env` file in the root directory:
 
 ```env
@@ -171,6 +188,7 @@ VITE_VERSION=1.0.0
 ```
 
 ### Tailwind Configuration
+
 The project uses a custom Tailwind configuration optimized for financial applications with enhanced color schemes and responsive breakpoints.
 
 ## 🧪 Testing
@@ -189,18 +207,21 @@ npm run lint
 ## 📈 Roadmap
 
 ### Phase 1 (Q1 2025)
+
 - [ ] Enhanced AI fraud detection models
 - [ ] Advanced credit scoring algorithms
 - [ ] Mobile app development
 - [ ] API documentation
 
 ### Phase 2 (Q2 2025)
+
 - [ ] Multi-language support
 - [ ] Advanced analytics dashboard
 - [ ] Third-party integrations
 - [ ] Regulatory compliance tools
 
 ### Phase 3 (Q3 2025)
+
 - [ ] Continental expansion
 - [ ] Enterprise partnerships
 - [ ] Advanced reporting features
@@ -211,6 +232,7 @@ npm run lint
 We welcome contributions from the community! Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting pull requests.
 
 ### Development Workflow
+
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
@@ -219,7 +241,7 @@ We welcome contributions from the community! Please read our [Contributing Guide
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache version 2.0 License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
@@ -230,10 +252,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact & Support
 
-- **Website**: [securecredit.africa](https://securecredit.africa)
 - **Email**: laariyasaeed@gmail.com
-- **Documentation**: [docs.securecredit.africa](https://docs.securecredit.africa)
-- **Status Page**: [status.securecredit.africa](https://status.securecredit.africa)
 
 ---
 

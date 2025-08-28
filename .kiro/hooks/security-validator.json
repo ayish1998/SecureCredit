@@ -1,0 +1,25 @@
+{
+  "name": "Security Compliance Validator",
+  "description": "Validates security compliance on every commit",
+  "trigger": {
+    "type": "git_commit",
+    "branch": "*"
+  },
+  "actions": [
+    {
+      "type": "shell_command",
+      "command": "npm audit --audit-level moderate",
+      "description": "Check for security vulnerabilities"
+    },
+    {
+      "type": "shell_command", 
+      "command": "npm run lint -- --max-warnings 0",
+      "description": "Validate code quality and security patterns"
+    }
+  ],
+  "enabled": true,
+  "settings": {
+    "failOnError": true,
+    "timeout": 30000
+  }
+}
