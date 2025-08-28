@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, X, AlertTriangle, CheckCircle, Info, TrendingUp } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface Notification {
   id: string;

@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { LoginForm } from './LoginForm';
 import { RegisterForm } from './RegisterForm';
 import { ForgotPasswordForm } from './ForgotPasswordForm';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onClose, 
   initialMode = 'login' 
 }) => {
+  const { isDark } = useTheme();
   const [mode, setMode] = useState<AuthMode>(initialMode);
 
   if (!isOpen) return null;
@@ -32,18 +34,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
       onClick={handleBackdropClick}
     >
-      <div className="bg-gray-900 rounded-2xl border border-gray-700 w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-gray-900 border-b border-gray-700 p-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">
+      <div className={`rounded-2xl border w-full max-w-md max-h-[90vh] overflow-y-auto transition-colors duration-300 ${
+        isDark 
+          ? 'bg-gray-900 border-gray-700' 
+          : 'bg-white border-gray-200'
+      }`}>
+        <div className={`sticky top-0 border-b p-4 flex items-center justify-between transition-colors duration-300 ${
+          isDark 
+            ? 'bg-gray-900 border-gray-700' 
+            : 'bg-white border-gray-200'
+        }`}>
+          <h2 className={`text-lg font-semibold ${
+            isDark ? 'text-white' : 'text-gray-900'
+          }`}>
             {mode === 'login' && 'Sign In'}
             {mode === 'register' && 'Create Account'}
             {mode === 'forgot-password' && 'Reset Password'}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+            className={`p-2 rounded-lg transition-colors ${
+              isDark 
+                ? 'hover:bg-gray-800 text-gray-400' 
+                : 'hover:bg-gray-100 text-gray-600'
+            }`}
           >
-            <X className="w-5 h-5 text-gray-400" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 

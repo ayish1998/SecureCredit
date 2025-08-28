@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User, Settings, LogOut, Shield, Bell, CreditCard, Activity } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface UserProfileProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface UserProfileProps {
 
 export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
+  const { isDark } = useTheme();
   const [activeTab, setActiveTab] = useState('profile');
 
   if (!isOpen || !user) return null;
@@ -29,7 +31,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
       className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
       onClick={handleBackdropClick}
     >
-      <div className="bg-gray-900 rounded-2xl border border-gray-700 w-full max-w-2xl max-h-[90vh] overflow-hidden">
+      <div className={`rounded-2xl border w-full max-w-2xl max-h-[90vh] overflow-hidden transition-colors duration-300 ${
+        isDark 
+          ? 'bg-gray-900 border-gray-700' 
+          : 'bg-white border-gray-200'
+      }`}>
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6">
           <div className="flex items-center space-x-4">
             <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
@@ -56,13 +62,17 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
           </div>
         </div>
 
-        <div className="flex border-b border-gray-700">
+        <div className={`flex border-b transition-colors duration-300 ${
+          isDark ? 'border-gray-700' : 'border-gray-200'
+        }`}>
           <button
             onClick={() => setActiveTab('profile')}
             className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
               activeTab === 'profile'
                 ? 'text-blue-400 border-b-2 border-blue-400'
-                : 'text-gray-400 hover:text-white'
+                : isDark 
+                  ? 'text-gray-400 hover:text-white' 
+                  : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             Profile
@@ -72,7 +82,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
             className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
               activeTab === 'security'
                 ? 'text-blue-400 border-b-2 border-blue-400'
-                : 'text-gray-400 hover:text-white'
+                : isDark 
+                  ? 'text-gray-400 hover:text-white' 
+                  : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             Security
@@ -82,7 +94,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
             className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
               activeTab === 'activity'
                 ? 'text-blue-400 border-b-2 border-blue-400'
-                : 'text-gray-400 hover:text-white'
+                : isDark 
+                  ? 'text-gray-400 hover:text-white' 
+                  : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             Activity
@@ -94,75 +108,111 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
                     First Name
                   </label>
                   <input
                     type="text"
                     value={user.firstName}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                    className={`w-full px-3 py-2 border rounded-lg transition-colors duration-300 ${
+                      isDark 
+                        ? 'bg-gray-800 border-gray-700 text-white' 
+                        : 'bg-gray-50 border-gray-300 text-gray-900'
+                    }`}
                     readOnly
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
                     Last Name
                   </label>
                   <input
                     type="text"
                     value={user.lastName}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                    className={`w-full px-3 py-2 border rounded-lg transition-colors duration-300 ${
+                      isDark 
+                        ? 'bg-gray-800 border-gray-700 text-white' 
+                        : 'bg-gray-50 border-gray-300 text-gray-900'
+                    }`}
                     readOnly
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
                   Email Address
                 </label>
                 <input
                   type="email"
                   value={user.email}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                  className={`w-full px-3 py-2 border rounded-lg transition-colors duration-300 ${
+                    isDark 
+                      ? 'bg-gray-800 border-gray-700 text-white' 
+                      : 'bg-gray-50 border-gray-300 text-gray-900'
+                  }`}
                   readOnly
                 />
               </div>
 
               {user.phone && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
                     Phone Number
                   </label>
                   <input
                     type="tel"
                     value={user.phone}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                    className={`w-full px-3 py-2 border rounded-lg transition-colors duration-300 ${
+                      isDark 
+                        ? 'bg-gray-800 border-gray-700 text-white' 
+                        : 'bg-gray-50 border-gray-300 text-gray-900'
+                    }`}
                     readOnly
                   />
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
                   Country
                 </label>
                 <input
                   type="text"
                   value={user.country}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                  className={`w-full px-3 py-2 border rounded-lg transition-colors duration-300 ${
+                    isDark 
+                      ? 'bg-gray-800 border-gray-700 text-white' 
+                      : 'bg-gray-50 border-gray-300 text-gray-900'
+                  }`}
                   readOnly
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
                   Member Since
                 </label>
                 <input
                   type="text"
                   value={new Date(user.createdAt).toLocaleDateString()}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                  className={`w-full px-3 py-2 border rounded-lg transition-colors duration-300 ${
+                    isDark 
+                      ? 'bg-gray-800 border-gray-700 text-white' 
+                      : 'bg-gray-50 border-gray-300 text-gray-900'
+                  }`}
                   readOnly
                 />
               </div>
@@ -171,12 +221,18 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
 
           {activeTab === 'security' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
+              <div className={`flex items-center justify-between p-4 rounded-lg transition-colors duration-300 ${
+                isDark ? 'bg-gray-800' : 'bg-gray-50'
+              }`}>
                 <div className="flex items-center space-x-3">
                   <Shield className="w-5 h-5 text-green-400" />
                   <div>
-                    <p className="text-white font-medium">Two-Factor Authentication</p>
-                    <p className="text-sm text-gray-400">Add an extra layer of security</p>
+                    <p className={`font-medium ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>Two-Factor Authentication</p>
+                    <p className={`text-sm ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>Add an extra layer of security</p>
                   </div>
                 </div>
                 <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors">
@@ -184,12 +240,18 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
                 </button>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
+              <div className={`flex items-center justify-between p-4 rounded-lg transition-colors duration-300 ${
+                isDark ? 'bg-gray-800' : 'bg-gray-50'
+              }`}>
                 <div className="flex items-center space-x-3">
                   <Bell className="w-5 h-5 text-yellow-400" />
                   <div>
-                    <p className="text-white font-medium">Security Notifications</p>
-                    <p className="text-sm text-gray-400">Get alerts for suspicious activity</p>
+                    <p className={`font-medium ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>Security Notifications</p>
+                    <p className={`text-sm ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>Get alerts for suspicious activity</p>
                   </div>
                 </div>
                 <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm transition-colors">
@@ -197,15 +259,25 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
                 </button>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
+              <div className={`flex items-center justify-between p-4 rounded-lg transition-colors duration-300 ${
+                isDark ? 'bg-gray-800' : 'bg-gray-50'
+              }`}>
                 <div className="flex items-center space-x-3">
                   <CreditCard className="w-5 h-5 text-blue-400" />
                   <div>
-                    <p className="text-white font-medium">Device Management</p>
-                    <p className="text-sm text-gray-400">Manage trusted devices</p>
+                    <p className={`font-medium ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>Device Management</p>
+                    <p className={`text-sm ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>Manage trusted devices</p>
                   </div>
                 </div>
-                <button className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm transition-colors">
+                <button className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+                  isDark 
+                    ? 'bg-gray-600 hover:bg-gray-700 text-white' 
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                }`}>
                   Manage
                 </button>
               </div>
@@ -220,39 +292,63 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
 
           {activeTab === 'activity' && (
             <div className="space-y-4">
-              <div className="flex items-center space-x-3 p-3 bg-gray-800 rounded-lg">
+              <div className={`flex items-center space-x-3 p-3 rounded-lg transition-colors duration-300 ${
+                isDark ? 'bg-gray-800' : 'bg-gray-50'
+              }`}>
                 <Activity className="w-5 h-5 text-green-400" />
                 <div>
-                  <p className="text-white text-sm">Successful login</p>
-                  <p className="text-gray-400 text-xs">
+                  <p className={`text-sm ${
+                    isDark ? 'text-white' : 'text-gray-900'
+                  }`}>Successful login</p>
+                  <p className={`text-xs ${
+                    isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
                     {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-3 p-3 bg-gray-800 rounded-lg">
+              <div className={`flex items-center space-x-3 p-3 rounded-lg transition-colors duration-300 ${
+                isDark ? 'bg-gray-800' : 'bg-gray-50'
+              }`}>
                 <Shield className="w-5 h-5 text-blue-400" />
                 <div>
-                  <p className="text-white text-sm">Security scan completed</p>
-                  <p className="text-gray-400 text-xs">2 hours ago</p>
+                  <p className={`text-sm ${
+                    isDark ? 'text-white' : 'text-gray-900'
+                  }`}>Security scan completed</p>
+                  <p className={`text-xs ${
+                    isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>2 hours ago</p>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-3 p-3 bg-gray-800 rounded-lg">
+              <div className={`flex items-center space-x-3 p-3 rounded-lg transition-colors duration-300 ${
+                isDark ? 'bg-gray-800' : 'bg-gray-50'
+              }`}>
                 <CreditCard className="w-5 h-5 text-purple-400" />
                 <div>
-                  <p className="text-white text-sm">Credit score updated</p>
-                  <p className="text-gray-400 text-xs">1 day ago</p>
+                  <p className={`text-sm ${
+                    isDark ? 'text-white' : 'text-gray-900'
+                  }`}>Credit score updated</p>
+                  <p className={`text-xs ${
+                    isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>1 day ago</p>
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        <div className="border-t border-gray-700 p-6 flex justify-between">
+        <div className={`border-t p-6 flex justify-between transition-colors duration-300 ${
+          isDark ? 'border-gray-700' : 'border-gray-200'
+        }`}>
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
+            className={`px-6 py-2 rounded-lg transition-colors ${
+              isDark 
+                ? 'bg-gray-800 hover:bg-gray-700 text-white' 
+                : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+            }`}
           >
             Close
           </button>

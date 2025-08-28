@@ -1,11 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, Shield, Brain, Zap, Clock, TrendingUp, MapPin, Users, Activity, Upload, FileText, Download } from 'lucide-react';
+import { AlertTriangle, Shield, Brain, Zap, Clock, TrendingUp, MapPin, Users, Activity, Upload, FileText, Download, Trash2 } from 'lucide-react';
 import { simpleFraudDetectionAI } from '../utils/simpleFraudDetection';
+import { useFraudDetection } from '../contexts/FraudDetectionContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { Transaction, FraudPrediction, FraudAlert } from '../types/fraud';
 
 export const FraudDetectionCenter: React.FC = () => {
-  const [realtimeAlerts, setRealtimeAlerts] = useState<FraudAlert[]>([]);
-  const [recentPredictions, setRecentPredictions] = useState<FraudPrediction[]>([]);
+  const { isDark } = useTheme();
+  const { 
+    realtimeAlerts, 
+    recentPredictions, 
+    addAlert, 
+    addPrediction, 
+    clearAlerts, 
+    clearPredictions, 
+    downloadFraudReport 
+  } = useFraudDetection();
   const [modelMetrics, setModelMetrics] = useState<any>(null);
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [testTransaction, setTestTransaction] = useState<Partial<Transaction>>({
@@ -29,7 +39,7 @@ export const FraudDetectionCenter: React.FC = () => {
     // Simulate real-time transactions for demo
     const interval = setInterval(() => {
       simulateTransaction();
-    }, 5000); // Every 5 seconds
+    }, 3000); // Every 3 seconds for more active demo
 
     return () => {
       clearInterval(interval);
@@ -39,146 +49,228 @@ export const FraudDetectionCenter: React.FC = () => {
   const simulateTransaction = async () => {
     if (!isMonitoring) return;
     
-    // Create more varied transaction scenarios
-    const scenarios = [
-      // Normal transaction (60% chance)
-      () => ({
-        id: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        amount: Math.random() * 500 + 20,
-        currency: 'GHS',
-        timestamp: new Date().toISOString(),
-        type: ['send_money', 'bill_payment', 'airtime'][Math.floor(Math.random() * 3)] as any,
-        location: ['Accra', 'Kumasi', 'Tamale'][Math.floor(Math.random() * 3)] + ', Ghana',
-        merchantCategory: ['grocery', 'utilities', 'transport', 'telecom'][Math.floor(Math.random() * 4)],
-        agentInfo: {
-          id: `agent_${Math.floor(Math.random() * 100)}`,
-          trustScore: 0.7 + Math.random() * 0.3,
-          location: 'Accra'
-        },
-        deviceFingerprint: {
-          deviceId: `device_${Math.floor(Math.random() * 1000)}`,
-          isNewDevice: false,
-          trustScore: 0.6 + Math.random() * 0.4
-        },
-        userProfile: {
-          userId: `user_${Math.floor(Math.random() * 1000)}`,
-          lastKnownLocation: 'Accra, Ghana',
-          recentTransactions: [],
-          riskProfile: 'low' as any
-        },
-        networkTrust: 0.7 + Math.random() * 0.3,
-        pinAttempts: 1
-      }),
+    // Real African mobile money transaction scenarios with authentic details
+    const realScenarios = [
+      // Normal transactions (50% chance)
+      () => {
+        const normalUsers = ['Kwame_Asante', 'Ama_Osei', 'Kofi_Mensah', 'Akosua_Boateng', 'Yaw_Oppong'];
+        const normalMerchants = ['MTN_Mobile_Money', 'Vodafone_Cash', 'AirtelTigo_Money', 'Zeepay_Ghana'];
+        const normalLocations = ['Accra_Osu', 'Kumasi_Kejetia', 'Tamale_Central', 'Cape_Coast_Market'];
+        
+        const user = normalUsers[Math.floor(Math.random() * normalUsers.length)];
+        const merchant = normalMerchants[Math.floor(Math.random() * normalMerchants.length)];
+        const location = normalLocations[Math.floor(Math.random() * normalLocations.length)];
+        
+        return {
+          id: `GHS_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+          amount: Math.floor(Math.random() * 300 + 20), // 20-320 GHS
+          currency: 'GHS',
+          timestamp: new Date().toISOString(),
+          type: ['send_money', 'bill_payment', 'airtime'][Math.floor(Math.random() * 3)] as any,
+          location: location.replace('_', ', ') + ', Ghana',
+          merchantCategory: ['grocery', 'utilities', 'transport', 'telecom'][Math.floor(Math.random() * 4)],
+          description: `Payment to ${merchant}`,
+          agentInfo: {
+            id: `verified_agent_${location}`,
+            trustScore: 0.85 + Math.random() * 0.15,
+            location: location.replace('_', ', ')
+          },
+          deviceFingerprint: {
+            deviceId: `${user}_primary_device`,
+            isNewDevice: false,
+            trustScore: 0.8 + Math.random() * 0.2
+          },
+          userProfile: {
+            userId: user,
+            lastKnownLocation: location.replace('_', ', ') + ', Ghana',
+            recentTransactions: [],
+            riskProfile: 'low' as any
+          },
+          networkTrust: 0.8 + Math.random() * 0.2,
+          pinAttempts: 1
+        };
+      },
       
-      // Suspicious transaction (25% chance)
-      () => ({
-        id: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        amount: Math.random() * 1500 + 300,
-        currency: 'GHS',
-        timestamp: new Date().toISOString(),
-        type: ['cash_out', 'send_money'][Math.floor(Math.random() * 2)] as any,
-        location: ['Kumasi', 'Cape Coast', 'Ho'][Math.floor(Math.random() * 3)] + ', Ghana',
-        merchantCategory: ['unknown', 'investment', 'agent'][Math.floor(Math.random() * 3)],
-        agentInfo: {
-          id: `agent_${Math.floor(Math.random() * 50)}`,
-          trustScore: 0.3 + Math.random() * 0.4,
-          location: 'Unknown'
-        },
-        deviceFingerprint: {
-          deviceId: `device_new_${Date.now()}`,
-          isNewDevice: Math.random() > 0.3,
-          trustScore: 0.2 + Math.random() * 0.5
-        },
-        userProfile: {
-          userId: `user_${Math.floor(Math.random() * 500)}`,
-          lastKnownLocation: 'Accra, Ghana',
-          recentTransactions: [],
-          riskProfile: 'medium' as any
-        },
-        networkTrust: 0.3 + Math.random() * 0.4,
-        pinAttempts: Math.floor(Math.random() * 3) + 1
-      }),
+      // Suspicious transactions (30% chance)
+      () => {
+        const suspiciousPatterns = [
+          {
+            type: 'late_night_large',
+            user: 'Unknown_User_' + Math.floor(Math.random() * 1000),
+            amount: Math.floor(Math.random() * 1200 + 500),
+            location: 'Unverified_Location',
+            merchant: 'Unknown_Merchant',
+            description: 'Urgent transfer - family emergency'
+          },
+          {
+            type: 'new_device_transfer',
+            user: 'Suspicious_' + Math.floor(Math.random() * 500),
+            amount: Math.floor(Math.random() * 800 + 300),
+            location: 'Different_Region',
+            merchant: 'Investment_Opportunity',
+            description: 'Quick investment return'
+          },
+          {
+            type: 'multiple_attempts',
+            user: 'Compromised_' + Math.floor(Math.random() * 200),
+            amount: Math.floor(Math.random() * 600 + 200),
+            location: 'Remote_Area',
+            merchant: 'Cash_Out_Agent',
+            description: 'Emergency cash withdrawal'
+          }
+        ];
+        
+        const pattern = suspiciousPatterns[Math.floor(Math.random() * suspiciousPatterns.length)];
+        
+        return {
+          id: `SUSP_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+          amount: pattern.amount,
+          currency: 'GHS',
+          timestamp: new Date().toISOString(),
+          type: ['cash_out', 'send_money'][Math.floor(Math.random() * 2)] as any,
+          location: pattern.location.replace('_', ' '),
+          merchantCategory: pattern.type === 'new_device_transfer' ? 'investment' : 'unknown',
+          description: pattern.description,
+          agentInfo: {
+            id: `unverified_agent_${Math.floor(Math.random() * 100)}`,
+            trustScore: 0.2 + Math.random() * 0.4,
+            location: 'Unverified'
+          },
+          deviceFingerprint: {
+            deviceId: `new_device_${Date.now()}`,
+            isNewDevice: pattern.type === 'new_device_transfer',
+            trustScore: 0.1 + Math.random() * 0.4
+          },
+          userProfile: {
+            userId: pattern.user,
+            lastKnownLocation: 'Different Location',
+            recentTransactions: [],
+            riskProfile: 'medium' as any
+          },
+          networkTrust: 0.2 + Math.random() * 0.4,
+          pinAttempts: pattern.type === 'multiple_attempts' ? Math.floor(Math.random() * 3) + 2 : 1
+        };
+      },
       
-      // High-risk transaction (15% chance)
-      () => ({
-        id: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        amount: Math.random() * 3000 + 1000,
-        currency: 'GHS',
-        timestamp: new Date().toISOString(),
-        type: 'cash_out' as any,
-        location: 'Unknown Location',
-        merchantCategory: ['unknown', 'lottery', 'investment'][Math.floor(Math.random() * 3)],
-        agentInfo: {
-          id: `suspicious_agent_${Math.floor(Math.random() * 20)}`,
-          trustScore: Math.random() * 0.3,
-          location: 'Unknown'
-        },
-        deviceFingerprint: {
-          deviceId: `suspicious_device_${Date.now()}`,
-          isNewDevice: true,
-          trustScore: Math.random() * 0.2
-        },
-        userProfile: {
-          userId: `high_risk_user_${Math.floor(Math.random() * 100)}`,
-          lastKnownLocation: 'Different Location',
-          recentTransactions: [],
-          riskProfile: 'high' as any
-        },
-        networkTrust: Math.random() * 0.3,
-        pinAttempts: Math.floor(Math.random() * 4) + 2
-      })
+      // High-risk fraud attempts (20% chance)
+      () => {
+        const fraudTypes = [
+          {
+            type: 'SIM_SWAP_ATTACK',
+            user: 'VICTIM_' + Math.floor(Math.random() * 100),
+            amount: Math.floor(Math.random() * 2500 + 1000),
+            description: 'SIM swap - unauthorized device access detected',
+            location: 'Foreign_IP_Address'
+          },
+          {
+            type: 'SOCIAL_ENGINEERING',
+            user: 'ELDERLY_' + Math.floor(Math.random() * 50),
+            amount: Math.floor(Math.random() * 1800 + 800),
+            description: 'Fake customer service call - urgent transfer request',
+            location: 'Call_Center_Scam'
+          },
+          {
+            type: 'INVESTMENT_SCAM',
+            user: 'TARGET_' + Math.floor(Math.random() * 200),
+            amount: Math.floor(Math.random() * 3000 + 500),
+            description: 'Ponzi scheme - promise of 300% returns',
+            location: 'Fake_Investment_Office'
+          }
+        ];
+        
+        const fraud = fraudTypes[Math.floor(Math.random() * fraudTypes.length)];
+        
+        return {
+          id: `FRAUD_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+          amount: fraud.amount,
+          currency: 'GHS',
+          timestamp: new Date().toISOString(),
+          type: 'cash_out' as any,
+          location: fraud.location.replace('_', ' '),
+          merchantCategory: fraud.type === 'INVESTMENT_SCAM' ? 'lottery' : 'unknown',
+          description: fraud.description,
+          agentInfo: {
+            id: `blacklisted_agent_${Math.floor(Math.random() * 20)}`,
+            trustScore: Math.random() * 0.2,
+            location: 'Blacklisted'
+          },
+          deviceFingerprint: {
+            deviceId: `compromised_device_${Date.now()}`,
+            isNewDevice: true,
+            trustScore: Math.random() * 0.15
+          },
+          userProfile: {
+            userId: fraud.user,
+            lastKnownLocation: 'Original Location',
+            recentTransactions: [],
+            riskProfile: 'high' as any
+          },
+          networkTrust: Math.random() * 0.2,
+          pinAttempts: Math.floor(Math.random() * 5) + 3
+        };
+      }
     ];
     
-    // Select scenario based on probability
+    // Select scenario based on realistic probability
     const rand = Math.random();
     let transaction: Transaction;
     
-    if (rand < 0.6) {
-      transaction = scenarios[0](); // Normal (60%)
-    } else if (rand < 0.85) {
-      transaction = scenarios[1](); // Suspicious (25%)
+    if (rand < 0.5) {
+      transaction = realScenarios[0](); // Normal (50%)
+    } else if (rand < 0.8) {
+      transaction = realScenarios[1](); // Suspicious (30%)
     } else {
-      transaction = scenarios[2](); // High-risk (15%)
+      transaction = realScenarios[2](); // High-risk (20%)
     }
     
     try {
       const prediction = await simpleFraudDetectionAI.predictFraud(transaction);
       
       // Always add to recent predictions
-      setRecentPredictions(prev => [prediction, ...prev.slice(0, 9)]);
+      addPrediction(prediction);
       
-      // Create alert for medium, high, or critical risk
+      // Create detailed, specific alerts for risky transactions
       if (['medium', 'high', 'critical'].includes(prediction.riskLevel)) {
+        const alertMessages = {
+          medium: [
+            `Unusual transaction pattern detected for user ${transaction.userProfile?.userId?.replace('_', ' ')}`,
+            `${transaction.amount} GHS transfer to ${transaction.merchantCategory} merchant flagged`,
+            `Location anomaly: Transaction from ${transaction.location}`,
+            `Device trust score below threshold: ${((transaction.deviceFingerprint?.trustScore || 0) * 100).toFixed(0)}%`
+          ],
+          high: [
+            `URGENT: Potential fraud attempt - ${transaction.description}`,
+            `High-risk ${transaction.amount} GHS transaction from new device`,
+            `Multiple PIN attempts detected: ${transaction.pinAttempts} failed attempts`,
+            `Suspicious agent interaction: Trust score ${((transaction.agentInfo?.trustScore || 0) * 100).toFixed(0)}%`
+          ],
+          critical: [
+            `CRITICAL ALERT: ${transaction.description}`,
+            `Fraud pattern detected: ${prediction.detectedPatterns.map(p => p.type).join(', ')}`,
+            `Immediate intervention required for ${transaction.amount} GHS transaction`,
+            `Account takeover suspected: User ${transaction.userProfile?.userId?.replace('_', ' ')}`
+          ]
+        };
+        
+        const messages = alertMessages[prediction.riskLevel as keyof typeof alertMessages];
+        const selectedMessage = messages[Math.floor(Math.random() * messages.length)];
+        
         const alert: FraudAlert = {
           id: `alert_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
           transactionId: prediction.transactionId,
           alertType: prediction.riskLevel === 'critical' ? 'fraud_detected' : 
                     prediction.riskLevel === 'high' ? 'suspicious_pattern' : 'high_risk',
           severity: prediction.riskLevel,
-          message: `${prediction.riskLevel.toUpperCase()} risk transaction: ${prediction.explanation.slice(0, 100)}...`,
+          message: selectedMessage,
           timestamp: new Date().toISOString(),
           status: 'active'
         };
         
-        setRealtimeAlerts(prev => [alert, ...prev.slice(0, 9)]);
+        addAlert(alert);
       }
       
     } catch (error) {
       console.error('Error in transaction simulation:', error);
-      // Create a fallback prediction for demo purposes
-      const fallbackPrediction: FraudPrediction = {
-        transactionId: transaction.id,
-        riskScore: Math.random(),
-        riskLevel: ['low', 'medium', 'high'][Math.floor(Math.random() * 3)] as any,
-        isFraudulent: Math.random() > 0.7,
-        confidence: 0.8,
-        detectedPatterns: [],
-        explanation: 'Fallback prediction due to processing error',
-        recommendedAction: 'MONITOR_CLOSELY',
-        timestamp: new Date().toISOString()
-      };
-      
-      setRecentPredictions(prev => [fallbackPrediction, ...prev.slice(0, 9)]);
     }
   };
 
@@ -227,21 +319,42 @@ export const FraudDetectionCenter: React.FC = () => {
       console.log('Fraud detection result:', prediction);
       
       // Add to recent predictions
-      setRecentPredictions(prev => [prediction, ...prev.slice(0, 9)]);
+      addPrediction(prediction);
       
-      // Create alert if high risk
-      if (['high', 'critical'].includes(prediction.riskLevel)) {
+      // Create specific alert for test transactions
+      if (['medium', 'high', 'critical'].includes(prediction.riskLevel)) {
+        const testAlertMessages = {
+          medium: [
+            `Test transaction flagged: ${transaction.amount} GHS to ${transaction.merchantCategory} merchant`,
+            `Manual test detected unusual pattern for ${transaction.type} transaction`,
+            `Test alert: Device trust score ${((transaction.deviceFingerprint?.trustScore || 0) * 100).toFixed(0)}% below threshold`
+          ],
+          high: [
+            `TEST ALERT: High-risk ${transaction.amount} GHS transaction detected`,
+            `Manual fraud test triggered: ${transaction.pinAttempts} PIN attempts from ${transaction.deviceFingerprint?.isNewDevice ? 'new' : 'known'} device`,
+            `Test scenario: Suspicious ${transaction.type} to ${transaction.location}`
+          ],
+          critical: [
+            `CRITICAL TEST ALERT: Fraud detection system activated`,
+            `Manual test: ${prediction.detectedPatterns.map(p => p.type).join(', ')} patterns detected`,
+            `Test simulation: Immediate intervention required for ${transaction.amount} GHS`
+          ]
+        };
+        
+        const messages = testAlertMessages[prediction.riskLevel as keyof typeof testAlertMessages];
+        const selectedMessage = messages[Math.floor(Math.random() * messages.length)];
+        
         const alert: FraudAlert = {
           id: `test_alert_${Date.now()}`,
           transactionId: prediction.transactionId,
           alertType: prediction.riskLevel === 'critical' ? 'fraud_detected' : 'suspicious_pattern',
           severity: prediction.riskLevel,
-          message: `TEST: ${prediction.riskLevel.toUpperCase()} risk detected - ${prediction.explanation.slice(0, 80)}...`,
+          message: selectedMessage,
           timestamp: new Date().toISOString(),
           status: 'active'
         };
         
-        setRealtimeAlerts(prev => [alert, ...prev.slice(0, 9)]);
+        addAlert(alert);
       }
       
     } catch (error) {
@@ -260,7 +373,7 @@ export const FraudDetectionCenter: React.FC = () => {
         timestamp: new Date().toISOString()
       };
       
-      setRecentPredictions(prev => [fallbackPrediction, ...prev.slice(0, 9)]);
+      addPrediction(fallbackPrediction);
     }
   };
 
@@ -314,21 +427,42 @@ export const FraudDetectionCenter: React.FC = () => {
           try {
             const prediction = await simpleFraudDetectionAI.predictFraud(transaction);
             
-            // Generate alerts for high-risk batch transactions
-            if (['high', 'critical'].includes(prediction.riskLevel)) {
+            // Generate specific alerts for high-risk batch transactions
+            if (['medium', 'high', 'critical'].includes(prediction.riskLevel)) {
+              const batchAlertMessages = {
+                medium: [
+                  `Batch analysis: ${transaction.amount} GHS transaction flagged from ${transaction.location}`,
+                  `CSV processing: Unusual pattern detected for user ${transaction.userProfile?.userId}`,
+                  `Bulk scan: ${transaction.type} transaction to ${transaction.merchantCategory} merchant flagged`
+                ],
+                high: [
+                  `BATCH ALERT: High-risk ${transaction.amount} GHS transaction in uploaded data`,
+                  `CSV analysis: Multiple risk factors detected for ${transaction.deviceFingerprint?.deviceId}`,
+                  `Bulk processing: Suspicious ${transaction.type} from ${transaction.agentInfo?.id}`
+                ],
+                critical: [
+                  `CRITICAL BATCH ALERT: Fraud detected in uploaded CSV data`,
+                  `Bulk analysis: ${prediction.detectedPatterns.map(p => p.type).join(', ')} patterns found`,
+                  `CSV processing: Immediate review required for ${transaction.amount} GHS transaction`
+                ]
+              };
+              
+              const messages = batchAlertMessages[prediction.riskLevel as keyof typeof batchAlertMessages];
+              const selectedMessage = messages[Math.floor(Math.random() * messages.length)];
+              
               const alert: FraudAlert = {
                 id: `batch_alert_${Date.now()}_${batchIndex}`,
                 transactionId: prediction.transactionId,
                 alertType: prediction.riskLevel === 'critical' ? 'fraud_detected' : 'suspicious_pattern',
                 severity: prediction.riskLevel,
-                message: `BATCH: ${prediction.riskLevel.toUpperCase()} risk in batch analysis - ${prediction.explanation.slice(0, 60)}...`,
+                message: selectedMessage,
                 timestamp: new Date().toISOString(),
                 status: 'active'
               };
               
               // Add alert with a small delay to avoid overwhelming the UI
               setTimeout(() => {
-                setRealtimeAlerts(prev => [alert, ...prev.slice(0, 9)]);
+                addAlert(alert);
               }, batchIndex * 200);
             }
             
@@ -414,20 +548,44 @@ export const FraudDetectionCenter: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white">AI Fraud Detection Center</h2>
-          <p className="text-gray-400 text-sm sm:text-base">Real-time fraud detection for Ghanaian mobile money transactions</p>
+          <h2 className={`text-xl sm:text-2xl font-bold ${
+            isDark ? 'text-white' : 'text-gray-900'
+          }`}>AI Fraud Detection Center</h2>
+          <p className={`text-sm sm:text-base ${
+            isDark ? 'text-gray-400' : 'text-gray-600'
+          }`}>Real-time fraud detection for Ghanaian mobile money transactions</p>
         </div>
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-          <button
-            onClick={() => setShowBatchModal(true)}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center space-x-2"
-          >
-            <Upload className="w-4 h-4" />
-            <span>Batch Analysis</span>
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setShowBatchModal(true)}
+              className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center space-x-2"
+            >
+              <Upload className="w-4 h-4" />
+              <span>Batch Analysis</span>
+            </button>
+            <button
+              onClick={downloadFraudReport}
+              className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center space-x-2"
+              title="Download fraud detection report"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download Report</span>
+            </button>
+            <button
+              onClick={clearAlerts}
+              className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center space-x-2"
+              title="Clear all alerts"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Clear Alerts</span>
+            </button>
+          </div>
           <div className="flex items-center space-x-2">
           <div className={`w-3 h-3 rounded-full animate-pulse ${isMonitoring ? 'bg-green-400' : 'bg-red-400'}`}></div>
-          <span className="text-sm text-gray-400">
+          <span className={`text-sm ${
+            isDark ? 'text-gray-400' : 'text-gray-600'
+          }`}>
             {isMonitoring ? 'Monitoring Active' : 'Monitoring Inactive'}
           </span>
           </div>
@@ -437,41 +595,67 @@ export const FraudDetectionCenter: React.FC = () => {
       {/* Model Performance Metrics */}
       {modelMetrics && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-          <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+          <div className={`rounded-xl p-6 border transition-colors duration-300 ${
+            isDark 
+              ? 'bg-gray-800 border-gray-700' 
+              : 'bg-white border-gray-200 shadow-sm'
+          }`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-400">Model Accuracy</p>
+                <p className={`text-sm ${
+                  isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>Model Accuracy</p>
                 <p className="text-2xl font-bold text-green-400">{(modelMetrics.accuracy * 100).toFixed(1)}%</p>
               </div>
               <Brain className="w-8 h-8 text-green-400" />
             </div>
           </div>
           
-          <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+          <div className={`rounded-xl p-6 border transition-colors duration-300 ${
+            isDark 
+              ? 'bg-gray-800 border-gray-700' 
+              : 'bg-white border-gray-200 shadow-sm'
+          }`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-400">Training Data</p>
+                <p className={`text-sm ${
+                  isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>Training Data</p>
                 <p className="text-2xl font-bold text-blue-400">{modelMetrics.trainingDataSize?.toLocaleString() || 'N/A'}</p>
               </div>
               <Activity className="w-8 h-8 text-blue-400" />
             </div>
           </div>
           
-          <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+          <div className={`rounded-xl p-6 border transition-colors duration-300 ${
+            isDark 
+              ? 'bg-gray-800 border-gray-700' 
+              : 'bg-white border-gray-200 shadow-sm'
+          }`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-400">Fraud Patterns</p>
+                <p className={`text-sm ${
+                  isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>Fraud Patterns</p>
                 <p className="text-2xl font-bold text-purple-400">{modelMetrics.supportedPatterns?.length || 0}</p>
               </div>
               <Shield className="w-8 h-8 text-purple-400" />
             </div>
           </div>
           
-          <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+          <div className={`rounded-xl p-6 border transition-colors duration-300 ${
+            isDark 
+              ? 'bg-gray-800 border-gray-700' 
+              : 'bg-white border-gray-200 shadow-sm'
+          }`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-400">Status</p>
-                <p className="text-lg font-bold text-white">Ready</p>
+                <p className={`text-sm ${
+                  isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>Status</p>
+                <p className={`text-lg font-bold ${
+                  isDark ? 'text-white' : 'text-gray-900'
+                }`}>Ready</p>
               </div>
               <Zap className="w-8 h-8 text-yellow-400" />
             </div>
@@ -480,24 +664,42 @@ export const FraudDetectionCenter: React.FC = () => {
       )}
 
       {/* Test Fraud Detection */}
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-        <h3 className="text-lg font-semibold text-white mb-4">Test Fraud Detection</h3>
+      <div className={`rounded-xl p-6 border transition-colors duration-300 ${
+        isDark 
+          ? 'bg-gray-800 border-gray-700' 
+          : 'bg-white border-gray-200 shadow-sm'
+      }`}>
+        <h3 className={`text-lg font-semibold mb-4 ${
+          isDark ? 'text-white' : 'text-gray-900'
+        }`}>Test Fraud Detection</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           <div>
-            <label className="block text-sm text-gray-400 mb-2">Amount (GHS)</label>
+            <label className={`block text-sm mb-2 ${
+              isDark ? 'text-gray-400' : 'text-gray-600'
+            }`}>Amount (GHS)</label>
             <input
               type="number"
               value={testTransaction.amount}
               onChange={(e) => setTestTransaction(prev => ({ ...prev, amount: Number(e.target.value) }))}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+              className={`w-full px-3 py-2 border rounded-lg transition-colors duration-300 ${
+                isDark 
+                  ? 'bg-gray-700 border-gray-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-400 mb-2">Transaction Type</label>
+            <label className={`block text-sm mb-2 ${
+              isDark ? 'text-gray-400' : 'text-gray-600'
+            }`}>Transaction Type</label>
             <select
               value={testTransaction.type}
               onChange={(e) => setTestTransaction(prev => ({ ...prev, type: e.target.value as any }))}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+              className={`w-full px-3 py-2 border rounded-lg transition-colors duration-300 ${
+                isDark 
+                  ? 'bg-gray-700 border-gray-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
             >
               <option value="send_money">Send Money</option>
               <option value="cash_out">Cash Out</option>
@@ -507,11 +709,17 @@ export const FraudDetectionCenter: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm text-gray-400 mb-2">Merchant Category</label>
+            <label className={`block text-sm mb-2 ${
+              isDark ? 'text-gray-400' : 'text-gray-600'
+            }`}>Merchant Category</label>
             <select
               value={testTransaction.merchantCategory}
               onChange={(e) => setTestTransaction(prev => ({ ...prev, merchantCategory: e.target.value }))}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+              className={`w-full px-3 py-2 border rounded-lg transition-colors duration-300 ${
+                isDark 
+                  ? 'bg-gray-700 border-gray-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
             >
               <option value="grocery">Grocery</option>
               <option value="utilities">Utilities</option>
@@ -535,28 +743,46 @@ export const FraudDetectionCenter: React.FC = () => {
       {/* Real-time Alerts and Predictions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Real-time Alerts */}
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
+        <div className={`rounded-xl p-6 border transition-colors duration-300 ${
+          isDark 
+            ? 'bg-gray-800 border-gray-700' 
+            : 'bg-white border-gray-200 shadow-sm'
+        }`}>
+          <h3 className={`text-lg font-semibold mb-4 flex items-center space-x-2 ${
+            isDark ? 'text-white' : 'text-gray-900'
+          }`}>
             <AlertTriangle className="w-5 h-5 text-red-400" />
             <span>Real-time Fraud Alerts</span>
           </h3>
           
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {realtimeAlerts.length === 0 ? (
-              <p className="text-gray-400 text-center py-4 sm:py-8">No active alerts</p>
+              <p className={`text-center py-4 sm:py-8 ${
+                isDark ? 'text-gray-400' : 'text-gray-600'
+              }`}>No active alerts</p>
             ) : (
               realtimeAlerts.map((alert) => (
-                <div key={alert.id} className="p-3 bg-gray-700/50 rounded-lg border-l-4 border-red-500">
+                <div key={alert.id} className={`p-3 rounded-lg border-l-4 border-red-500 transition-colors duration-300 ${
+                  isDark 
+                    ? 'bg-gray-700/50' 
+                    : 'bg-red-50 hover:bg-red-100'
+                }`}>
                   <div className="flex items-center justify-between mb-2">
                     <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${getRiskColor(alert.severity)}`}>
                       {alert.severity}
                     </span>
-                    <span className="text-xs text-gray-400">
+                    <span className={`text-xs ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
                       {new Date(alert.timestamp).toLocaleTimeString()}
                     </span>
                   </div>
-                  <p className="text-sm text-white">{alert.message}</p>
-                  <p className="text-xs text-gray-400 mt-1">Transaction: {alert.transactionId}</p>
+                  <p className={`text-sm ${
+                    isDark ? 'text-white' : 'text-gray-900'
+                  }`}>{alert.message}</p>
+                  <p className={`text-xs mt-1 ${
+                    isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Transaction: {alert.transactionId}</p>
                 </div>
               ))
             )}
@@ -564,32 +790,70 @@ export const FraudDetectionCenter: React.FC = () => {
         </div>
 
         {/* Recent Predictions */}
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
-            <Brain className="w-5 h-5 text-blue-400" />
-            <span>Recent AI Predictions</span>
-          </h3>
+        <div className={`rounded-xl p-6 border transition-colors duration-300 ${
+          isDark 
+            ? 'bg-gray-800 border-gray-700' 
+            : 'bg-white border-gray-200 shadow-sm'
+        }`}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className={`text-lg font-semibold flex items-center space-x-2 ${
+              isDark ? 'text-white' : 'text-gray-900'
+            }`}>
+              <Brain className="w-5 h-5 text-blue-400" />
+              <span>Recent AI Predictions</span>
+            </h3>
+            {recentPredictions.length > 0 && (
+              <button
+                onClick={clearPredictions}
+                className={`text-xs transition-colors flex items-center space-x-1 ${
+                  isDark 
+                    ? 'text-gray-400 hover:text-red-400' 
+                    : 'text-gray-600 hover:text-red-500'
+                }`}
+                title="Clear all predictions"
+              >
+                <Trash2 className="w-3 h-3" />
+                <span>Clear</span>
+              </button>
+            )}
+          </div>
           
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {recentPredictions.length === 0 ? (
-              <p className="text-gray-400 text-center py-4 sm:py-8">No predictions yet</p>
+              <p className={`text-center py-4 sm:py-8 ${
+                isDark ? 'text-gray-400' : 'text-gray-600'
+              }`}>No predictions yet</p>
             ) : (
               recentPredictions.map((prediction) => (
-                <div key={prediction.transactionId} className="p-3 bg-gray-700/50 rounded-lg">
+                <div key={prediction.transactionId} className={`p-3 rounded-lg transition-colors duration-300 ${
+                  isDark 
+                    ? 'bg-gray-700/50' 
+                    : 'bg-gray-50 hover:bg-gray-100'
+                }`}>
                   <div className="flex items-center justify-between mb-2">
                     <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${getRiskColor(prediction.riskLevel)}`}>
                       {prediction.riskLevel}
                     </span>
                     <div className="text-right">
-                      <p className="text-xs text-gray-400">Risk Score</p>
-                      <p className="text-sm font-medium text-white">{(prediction.riskScore * 100).toFixed(1)}%</p>
+                      <p className={`text-xs ${
+                        isDark ? 'text-gray-400' : 'text-gray-600'
+                      }`}>Risk Score</p>
+                      <p className={`text-sm font-medium ${
+                        isDark ? 'text-white' : 'text-gray-900'
+                      }`}>{(prediction.riskScore * 100).toFixed(1)}%</p>
                     </div>
                   </div>
-                  <p className="text-sm text-white mb-1">{prediction.explanation}</p>
-                  <p className="text-xs text-gray-400">{prediction.recommendedAction}</p>
+                  <p className={`text-sm mb-1 ${
+                    isDark ? 'text-white' : 'text-gray-900'
+                  }`}>{prediction.explanation}</p>
+                  <p className={`text-xs ${
+                    isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>{prediction.recommendedAction}</p>
                   {prediction.detectedPatterns.length > 0 && (
                     <div className="mt-2">
-                      <p className="text-xs text-gray-400">Detected Patterns:</p>
+                      <p className={`text-xs ${
+                        isDark ? 'text-gray-400' : 'text-gray-600'
+                      }`}>Detected Patterns:</p>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {prediction.detectedPatterns.map((pattern, index) => (
                           <span key={index} className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded">
@@ -607,27 +871,43 @@ export const FraudDetectionCenter: React.FC = () => {
       </div>
 
       {/* Fraud Pattern Analysis */}
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-        <h3 className="text-lg font-semibold text-white mb-4">Ghanaian Fraud Pattern Analysis</h3>
+      <div className={`rounded-xl p-6 border transition-colors duration-300 ${
+        isDark 
+          ? 'bg-gray-800 border-gray-700' 
+          : 'bg-white border-gray-200 shadow-sm'
+      }`}>
+        <h3 className={`text-lg font-semibold mb-4 ${
+          isDark ? 'text-white' : 'text-gray-900'
+        }`}>Ghanaian Fraud Pattern Analysis</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
           <div className="space-y-4">
-            <h4 className="font-medium text-gray-300">Most Common Patterns</h4>
+            <h4 className={`font-medium ${
+              isDark ? 'text-gray-300' : 'text-gray-700'
+            }`}>Most Common Patterns</h4>
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-400">SIM Swap Fraud</span>
+                <span className={`text-sm ${
+                  isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>SIM Swap Fraud</span>
                 <span className="text-sm text-red-400">35%</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-400">Social Engineering</span>
+                <span className={`text-sm ${
+                  isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>Social Engineering</span>
                 <span className="text-sm text-orange-400">28%</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-400">Agent Fraud</span>
+                <span className={`text-sm ${
+                  isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>Agent Fraud</span>
                 <span className="text-sm text-yellow-400">22%</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-400">Investment Scams</span>
+                <span className={`text-sm ${
+                  isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>Investment Scams</span>
                 <span className="text-sm text-blue-400">15%</span>
               </div>
             </div>
