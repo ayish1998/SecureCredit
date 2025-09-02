@@ -25,6 +25,7 @@ import {
   Sun,
   Moon,
 } from "lucide-react";
+import { DataAdapter } from "./utils/dataAdapter";
 import { SecurityDashboard } from "./components/SecurityDashboard";
 import { SecurityAnalysis } from "./utils/fingerprint";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -50,6 +51,13 @@ const AppContent: React.FC = () => {
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [recentAlerts, setRecentAlerts] = useState<unknown[]>([]);
+  const [fraudStats, setFraudStats] = useState({
+    totalTransactions: 2847293,
+    fraudDetected: 1247,
+    fraudPrevented: 98.2,
+    riskScore: 23,
+  });
 
   // Update activeTab based on current route
   useEffect(() => {
@@ -64,6 +72,43 @@ const AppContent: React.FC = () => {
       setActiveTab("security");
     }
   }, [location.pathname]);
+
+  // Initialize and update sophisticated fraud data
+  useEffect(() => {
+    // Generate initial alerts using Ghanaian fraud patterns
+    const initialAlerts = DataAdapter.generateRealtimeFraudAlerts(5);
+    setRecentAlerts(initialAlerts);
+
+    // Initialize fraud stats from dataset patterns
+    const initialStats = DataAdapter.getSystemMetrics();
+    setFraudStats({
+      totalTransactions: initialStats.totalTransactions,
+      fraudDetected: initialStats.fraudDetected,
+      fraudPrevented: parseFloat(initialStats.fraudPrevented),
+      riskScore: initialStats.riskScore,
+    });
+
+    // Update alerts every 12 seconds with realistic patterns
+    const alertInterval = setInterval(() => {
+      const newAlerts = DataAdapter.generateRealtimeFraudAlerts(1);
+      if (newAlerts.length > 0) {
+        setRecentAlerts(prev => [newAlerts[0], ...prev.slice(0, 4)]);
+      }
+      
+      // Update fraud stats with realistic patterns
+      if (Math.random() > 0.6) {
+        const updatedStats = DataAdapter.getSystemMetrics();
+        setFraudStats({
+          totalTransactions: updatedStats.totalTransactions,
+          fraudDetected: updatedStats.fraudDetected,
+          fraudPrevented: parseFloat(updatedStats.fraudPrevented),
+          riskScore: updatedStats.riskScore,
+        });
+      }
+    }, 12000);
+
+    return () => clearInterval(alertInterval);
+  }, []);
 
   // If not authenticated, show auth modal
   if (!isAuthenticated) {
@@ -110,44 +155,6 @@ const AppContent: React.FC = () => {
   }
 
   // Main authenticated app
-
-  const fraudStats = {
-    totalTransactions: 2847293,
-    fraudDetected: 1247,
-    fraudPrevented: 98.2,
-    riskScore: 23,
-  };
-
-  const recentAlerts = [
-    {
-      id: 1,
-      type: "high",
-      message: "Unusual transaction pattern detected",
-      time: "2 min ago",
-      amount: "$2,450",
-    },
-    {
-      id: 2,
-      type: "medium",
-      message: "New device login from Ghana",
-      time: "5 min ago",
-      amount: "$150",
-    },
-    {
-      id: 3,
-      type: "low",
-      message: "Velocity check triggered",
-      time: "8 min ago",
-      amount: "$75",
-    },
-  ];
-
-  const creditScores = [
-    { name: "Kwame Asante", score: 745, risk: "Low", trend: "up" },
-    { name: "Amina Okafor", score: 620, risk: "Medium", trend: "stable" },
-    { name: "Fatima Diallo", score: 580, risk: "Medium", trend: "down" },
-    { name: "John Mwangi", score: 820, risk: "Low", trend: "up" },
-  ];
 
   const navigationItems = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },

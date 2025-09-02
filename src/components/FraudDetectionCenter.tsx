@@ -4,6 +4,7 @@ import { simpleFraudDetectionAI } from '../utils/simpleFraudDetection';
 import { useFraudDetection } from '../contexts/FraudDetectionContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { Transaction, FraudPrediction, FraudAlert } from '../types/fraud';
+import { DataAdapter } from '../utils/dataAdapter';
 
 export const FraudDetectionCenter: React.FC = () => {
   const { isDark } = useTheme();
@@ -48,6 +49,12 @@ export const FraudDetectionCenter: React.FC = () => {
 
   const simulateTransaction = async () => {
     if (!isMonitoring) return;
+
+    // Generate realistic transaction using sophisticated Ghanaian fraud patterns
+    const transactions = DataAdapter.generateTransactionStream(1);
+    if (transactions.length === 0) return;
+    
+    const mockTransaction = transactions[0];
     
     // Real African mobile money transaction scenarios with authentic details
     const realScenarios = [

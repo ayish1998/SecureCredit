@@ -45,12 +45,12 @@ const GHANA_REGIONS = [
   'Eastern', 'Northern', 'Upper East', 'Upper West', 'Brong Ahafo'
 ];
 
-const FRAUD_TYPES = [
+export const FRAUD_TYPES = [
   'SIM_SWAP', 'SOCIAL_ENGINEERING', 'INVESTMENT_SCAM', 
   'AGENT_FRAUD', 'ACCOUNT_TAKEOVER', 'MERCHANT_FRAUD'
 ];
 
-const MERCHANT_CATEGORIES = [
+export const MERCHANT_CATEGORIES = [
   'grocery', 'utilities', 'transport', 'telecom', 'fuel',
   'education', 'healthcare', 'entertainment', 'investment', 
   'lottery', 'unknown', 'agent'

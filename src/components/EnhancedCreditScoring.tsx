@@ -28,6 +28,7 @@ import {
   X
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { DataAdapter } from '../utils/dataAdapter';
 
 interface CreditProfile {
   id: string;
@@ -76,7 +77,11 @@ export const EnhancedCreditScoring: React.FC = () => {
   });
 
   useEffect(() => {
-    // Initialize with comprehensive sample data covering all risk categories
+    // Generate initial credit profiles using sophisticated Ghanaian fraud dataset
+    const initialProfiles = DataAdapter.generateCreditProfiles(12);
+    setCreditProfiles(initialProfiles);
+
+    // Add some static high-quality profiles for demo
     const sampleProfiles: CreditProfile[] = [
       // Excellent Credit (800+)
       {
