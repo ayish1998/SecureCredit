@@ -640,7 +640,7 @@ export const EnhancedCreditScoring: React.FC = () => {
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => analyzeProfile(profile)}
-                      disabled={analyzingProfileId !== null}
+                      disabled={analyzingProfileId === profile.id}
                       className="flex items-center space-x-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg transition-colors text-sm"
                     >
                       {analyzingProfileId === profile.id ? (
