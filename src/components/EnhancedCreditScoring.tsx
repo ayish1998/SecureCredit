@@ -62,6 +62,8 @@ export const EnhancedCreditScoring: React.FC = () => {
   const [selectedProfile, setSelectedProfile] = useState<CreditProfile | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingProfile, setEditingProfile] = useState<CreditProfile | null>(null);
   const [analyzingProfileId, setAnalyzingProfileId] = useState<string | null>(null);
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([]);
   const [newProfile, setNewProfile] = useState<Partial<CreditProfile>>({
@@ -572,7 +574,7 @@ export const EnhancedCreditScoring: React.FC = () => {
                 ? 'hover:bg-gray-700' 
                 : 'hover:bg-gray-50'
             }`}>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
                 {/* User Info */}
                 <div className="flex items-center space-x-4 flex-1">
                   <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
@@ -586,7 +588,7 @@ export const EnhancedCreditScoring: React.FC = () => {
                       }`}>{profile.name}</h3>
                       {getTrendIcon(profile.trend)}
                     </div>
-                    <div className="flex items-center space-x-4 text-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-sm space-y-1 sm:space-y-0">
                       <span className={`${
                         isDark ? 'text-gray-400' : 'text-gray-600'
                       }`}>{profile.location}</span>
@@ -601,7 +603,7 @@ export const EnhancedCreditScoring: React.FC = () => {
                 </div>
 
                 {/* Credit Info */}
-                <div className="flex items-center space-x-6 flex-shrink-0">
+                <div className="flex items-center justify-between lg:justify-end lg:space-x-6 flex-shrink-0">
                   <div className="text-center">
                     <div className={`text-lg font-bold ${
                       isDark ? 'text-white' : 'text-gray-900'
@@ -637,7 +639,7 @@ export const EnhancedCreditScoring: React.FC = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 mt-4 lg:mt-0">
                     <button
                       onClick={() => analyzeProfile(profile)}
                       disabled={analyzingProfileId === profile.id}
@@ -657,6 +659,10 @@ export const EnhancedCreditScoring: React.FC = () => {
                     </button>
                     
                     <button
+                      onClick={() => {
+                        setEditingProfile(profile);
+                        setShowEditModal(true);
+                      }}
                       className={`p-2 rounded-lg transition-colors ${
                         isDark 
                           ? 'hover:bg-gray-700 text-gray-400' 
@@ -1049,6 +1055,185 @@ export const EnhancedCreditScoring: React.FC = () => {
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                 >
                   Add User
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditModal && editingProfile && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowEditModal(false);
+              setEditingProfile(null);
+            }
+          }}
+        >
+          <div className={`rounded-2xl border w-full max-w-md transition-colors duration-300 ${
+            isDark 
+              ? 'bg-gray-900 border-gray-700' 
+              : 'bg-white border-gray-200'
+          }`}>
+            <div className={`p-6 border-b transition-colors duration-300 ${
+              isDark ? 'border-gray-700' : 'border-gray-200'
+            }`}>
+              <div className="flex items-center justify-between">
+                <h2 className={`text-xl font-bold ${
+                  isDark ? 'text-white' : 'text-gray-900'
+                }`}>Edit Profile</h2>
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingProfile(null);
+                  }}
+                  className={`p-2 rounded-lg transition-colors ${
+                    isDark 
+                      ? 'hover:bg-gray-800 text-gray-400' 
+                      : 'hover:bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (editingProfile) {
+                setCreditProfiles(prev => 
+                  prev.map(p => p.id === editingProfile.id ? editingProfile : p)
+                );
+                setShowEditModal(false);
+                setEditingProfile(null);
+              }
+            }}>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={editingProfile.name}
+                    onChange={(e) => setEditingProfile({...editingProfile, name: e.target.value})}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 transition-colors duration-300 ${
+                      isDark 
+                        ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                    }`}
+                    placeholder="Enter full name"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Phone Number *
+                  </label>
+                  <input
+                    type="tel"
+                    value={editingProfile.phone}
+                    onChange={(e) => setEditingProfile({...editingProfile, phone: e.target.value})}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 transition-colors duration-300 ${
+                      isDark 
+                        ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                    }`}
+                    placeholder="+254 70 123 4567"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    value={editingProfile.email}
+                    onChange={(e) => setEditingProfile({...editingProfile, email: e.target.value})}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 transition-colors duration-300 ${
+                      isDark 
+                        ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                    }`}
+                    placeholder="user@example.com"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Monthly Income ($)
+                  </label>
+                  <input
+                    type="number"
+                    value={editingProfile.monthlyIncome}
+                    onChange={(e) => setEditingProfile({...editingProfile, monthlyIncome: parseInt(e.target.value) || 0})}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 transition-colors duration-300 ${
+                      isDark 
+                        ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                    }`}
+                    placeholder="2500"
+                    min="0"
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    value={editingProfile.location}
+                    onChange={(e) => setEditingProfile({...editingProfile, location: e.target.value})}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 transition-colors duration-300 ${
+                      isDark 
+                        ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                    }`}
+                    placeholder="Nairobi, Kenya"
+                  />
+                </div>
+              </div>
+
+              <div className={`p-6 border-t flex space-x-3 transition-colors duration-300 ${
+                isDark ? 'border-gray-700' : 'border-gray-200'
+              }`}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingProfile(null);
+                  }}
+                  className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
+                    isDark 
+                      ? 'bg-gray-700 hover:bg-gray-600 text-white' 
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                >
+                  Update Profile
                 </button>
               </div>
             </form>
