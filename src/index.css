@@ -1,3 +1,51 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom responsive utilities for header controls */
+@layer utilities {
+  /* Touch-friendly button sizing */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Ensure minimum touch target size (44px) */
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  /* Custom breakpoint for extra small screens */
+  @media (min-width: 375px) {
+    .xs\:block {
+      display: block;
+    }
+    
+    .xs\:hidden {
+      display: none;
+    }
+    
+    .xs\:flex {
+      display: flex;
+    }
+  }
+  
+  /* Responsive text truncation */
+  .text-truncate-responsive {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  /* Smooth transitions for responsive changes */
+  .transition-responsive {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  /* Focus styles for accessibility */
+  .focus-visible-custom:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+}

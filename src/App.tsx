@@ -51,6 +51,7 @@ const AppContent: React.FC = () => {
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const mobileMenuButtonRef = React.useRef<HTMLButtonElement>(null);
   const [recentAlerts, setRecentAlerts] = useState<unknown[]>([]);
   const [fraudStats, setFraudStats] = useState({
     totalTransactions: 2847293,
@@ -72,6 +73,28 @@ const AppContent: React.FC = () => {
       setActiveTab("security");
     }
   }, [location.pathname]);
+
+  // Handle keyboard events and focus management for mobile sidebar
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showMobileSidebar) {
+        closeMobileSidebar();
+      }
+    };
+
+    if (showMobileSidebar) {
+      document.addEventListener('keydown', handleKeyDown);
+      // Prevent body scroll when sidebar is open
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [showMobileSidebar]);
 
   // Initialize and update sophisticated fraud data
   useEffect(() => {
@@ -165,6 +188,7 @@ const AppContent: React.FC = () => {
 
   const handleNavClick = (tabId: string) => {
     setActiveTab(tabId);
+    // Close mobile sidebar when navigation item is selected
     setShowMobileSidebar(false);
 
     // Navigate to the appropriate route
@@ -185,81 +209,162 @@ const AppContent: React.FC = () => {
         navigate("/dashboard");
     }
   };
+
+  const closeMobileSidebar = () => {
+    setShowMobileSidebar(false);
+    // Return focus to the menu button when closing
+    setTimeout(() => {
+      mobileMenuButtonRef.current?.focus();
+    }, 100);
+  };
   return (
     <div
-      className={`min-h-screen transition-colors duration-300 ${
+      className={`min-h-screen flex transition-colors duration-300 ${
         isDark ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"
       }`}
     >
-      {/* Header */}
-      <header
-        className={`transition-colors duration-300 border-b ${
+      {/* Desktop Sidebar */}
+      <div
+        className={`hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 transition-colors duration-300 ${
           isDark
             ? "bg-gray-800 border-gray-700"
-            : "bg-white border-gray-200 shadow-sm"
-        }`}
+            : "bg-white border-gray-200 shadow-lg"
+        } border-r`}
       >
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              {/* Mobile Menu Button */}
+        {/* Sidebar Header */}
+        <div className="flex items-center h-16 flex-shrink-0 px-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <Shield className="w-6 h-6 text-white" />
+          </div>
+          <div className="ml-3">
+            <h1
+              className={`text-xl font-bold ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
+            >
+              SecureCredit
+            </h1>
+            <p
+              className={`text-xs ${
+                isDark ? "text-gray-400" : "text-gray-600"
+              }`}
+            >
+              AI-Powered Financial Security
+            </p>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="mt-5 flex-1 px-2 space-y-1">
+          {navigationItems.map((item) => {
+            const IconComponent = item.icon;
+            return (
               <button
-                onClick={() => setShowMobileSidebar(true)}
-                className={`md:hidden p-2 rounded-lg transition-colors ${
-                  isDark
-                    ? "hover:bg-gray-700 text-white"
-                    : "hover:bg-gray-100 text-gray-600"
+                key={item.id}
+                onClick={() => handleNavClick(item.id)}
+                className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full transition-colors ${
+                  activeTab === item.id
+                    ? "bg-blue-600 text-white"
+                    : isDark
+                    ? "text-gray-300 hover:bg-gray-700 hover:text-white"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`}
               >
-                <Menu className="w-5 h-5" />
+                <IconComponent
+                  className={`mr-3 flex-shrink-0 h-6 w-6 ${
+                    activeTab === item.id
+                      ? "text-white"
+                      : isDark
+                      ? "text-gray-400 group-hover:text-gray-300"
+                      : "text-gray-400 group-hover:text-gray-500"
+                  }`}
+                />
+                {item.label}
               </button>
+            );
+          })}
+        </nav>
 
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <Shield className="w-6 h-6 text-white" />
+        {/* User Section */}
+        <div className={`flex-shrink-0 flex border-t p-4 ${
+          isDark ? "border-gray-700" : "border-gray-200"
+        }`}>
+          <div className="flex-shrink-0 w-full group block">
+            <div className="flex items-center">
+              <div className="w-9 h-9 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <User className="w-5 h-5 text-white" />
               </div>
-              <div className="hidden sm:block">
-                <h1
-                  className={`text-xl font-bold ${
+              <div className="ml-3 flex-1">
+                <p
+                  className={`text-sm font-medium ${
                     isDark ? "text-white" : "text-gray-900"
                   }`}
                 >
-                  SecureCredit
-                </h1>
+                  {user?.firstName} {user?.lastName}
+                </p>
                 <p
-                  className={`text-xs ${
+                  className={`text-xs capitalize ${
                     isDark ? "text-gray-400" : "text-gray-600"
                   }`}
                 >
-                  AI-Powered Financial Security
+                  {user?.role}
                 </p>
               </div>
+              <div className="flex items-center">
+                <button
+                  onClick={logout}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    isDark
+                      ? "hover:bg-gray-700 text-gray-400 hover:text-white"
+                      : "hover:bg-gray-100 text-gray-600 hover:text-gray-900"
+                  }`}
+                  title="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
             </div>
+          </div>
+        </div>
+      </div>
 
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              <nav className="hidden md:flex space-x-4 lg:space-x-6">
-                {navigationItems.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => handleNavClick(item.id)}
-                    className={`px-2 lg:px-3 py-2 rounded-md text-xs lg:text-sm font-medium transition-colors ${
-                      activeTab === item.id
-                        ? "bg-blue-600 text-white"
-                        : isDark
-                        ? "text-gray-300 hover:text-white hover:bg-gray-700"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </nav>
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40">
+        <div
+          className={`flex h-16 flex-shrink-0 items-center gap-x-4 border-b px-4 shadow-sm sm:gap-x-6 sm:px-6 ${
+            isDark
+              ? "bg-gray-800 border-gray-700"
+              : "bg-white border-gray-200"
+          }`}
+        >
+          <button
+            ref={mobileMenuButtonRef}
+            type="button"
+            className={`-m-2.5 p-2.5 rounded-md transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-700 ${
+              isDark ? "text-gray-400 hover:text-gray-300" : "text-gray-700 hover:text-gray-900"
+            } md:hidden`}
+            onClick={() => setShowMobileSidebar(true)}
+            aria-label="Open sidebar"
+            aria-expanded={showMobileSidebar}
+          >
+            <Menu className="h-6 w-6" />
+          </button>
 
-              {/* User Actions */}
-              <div
-                className={`flex items-center space-x-1 sm:space-x-3 border-l pl-2 sm:pl-4 ${
-                  isDark ? "border-gray-700" : "border-gray-200"
+          <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
+            <div className="flex items-center gap-x-4 lg:gap-x-6">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <Shield className="w-5 h-5 text-white" />
+              </div>
+              <h1
+                className={`text-lg font-bold ${
+                  isDark ? "text-white" : "text-gray-900"
                 }`}
               >
+                SecureCredit
+              </h1>
+            </div>
+            <div className="flex flex-1 justify-end">
+              <div className="flex items-center gap-x-4 lg:gap-x-6">
                 {/* Theme Toggle */}
                 <button
                   onClick={toggleTheme}
@@ -276,92 +381,84 @@ const AppContent: React.FC = () => {
                     <Moon className="w-5 h-5" />
                   )}
                 </button>
-                <div className="hidden sm:block">
-                  <button
-                    onClick={() => setShowNotifications(true)}
-                    className={`relative p-2 rounded-lg transition-colors ${
-                      isDark
-                        ? "hover:bg-gray-700 text-gray-300"
-                        : "hover:bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    <Bell className="w-5 h-5" />
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                  </button>
-                </div>
 
+                {/* Notifications */}
+                <button
+                  onClick={() => setShowNotifications(true)}
+                  className={`relative p-2 rounded-lg transition-colors ${
+                    isDark
+                      ? "hover:bg-gray-700 text-gray-300"
+                      : "hover:bg-gray-100 text-gray-600"
+                  }`}
+                  title="Notifications"
+                >
+                  <Bell className="w-5 h-5" />
+                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                </button>
+
+                {/* User Profile */}
                 <button
                   onClick={() => setShowUserProfile(true)}
-                  className={`flex items-center space-x-2 p-2 rounded-lg transition-colors ${
-                    isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                  className={`flex items-center gap-x-3 px-3 py-2 text-sm font-semibold leading-6 rounded-lg transition-colors ${
+                    isDark 
+                      ? "text-white hover:bg-gray-700" 
+                      : "text-gray-900 hover:bg-gray-100"
                   }`}
+                  title="User Profile"
                 >
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                     <User className="w-4 h-4 text-white" />
                   </div>
-                  <div className="hidden md:block text-left">
-                    <p
-                      className={`text-xs lg:text-sm font-medium ${
-                        isDark ? "text-white" : "text-gray-900"
-                      }`}
-                    >
-                      {user?.firstName} {user?.lastName}
-                    </p>
-                    <p
-                      className={`text-xs capitalize ${
-                        isDark ? "text-gray-400" : "text-gray-600"
-                      }`}
-                    >
-                      {user?.role}
-                    </p>
-                  </div>
-                </button>
-
-                <button
-                  onClick={logout}
-                  className={`p-2 rounded-lg transition-colors ${
-                    isDark
-                      ? "hover:bg-gray-700 text-gray-400 hover:text-white"
-                      : "hover:bg-gray-100 text-gray-600 hover:text-gray-900"
-                  }`}
-                  title="Sign Out"
-                >
-                  <LogOut className="w-5 h-5" />
+                  <span className="hidden lg:block">
+                    {user?.firstName} {user?.lastName}
+                  </span>
                 </button>
               </div>
             </div>
           </div>
         </div>
-      </header>
+      </div>
+
+
 
       {/* Mobile Sidebar */}
-      {showMobileSidebar && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          {/* Backdrop */}
+      <div className={`relative z-50 lg:hidden transition-opacity duration-300 ${
+        showMobileSidebar ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      }`}>
+        {/* Backdrop overlay with click-outside-to-close */}
+        <div 
+          className={`fixed inset-0 bg-gray-900/80 transition-opacity duration-300 ${
+            showMobileSidebar ? 'opacity-100' : 'opacity-0'
+          }`} 
+          onClick={closeMobileSidebar}
+          aria-hidden="true"
+        />
+        
+        <div className="fixed inset-0 flex">
           <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowMobileSidebar(false)}
-          ></div>
-
-          {/* Sidebar */}
-          <div
-            className={`fixed left-0 top-0 h-full w-80 border-r transform transition-all duration-300 ease-in-out ${
-              isDark
-                ? "bg-gray-800 border-gray-700"
-                : "bg-white border-gray-200"
-            }`}
+            className={`relative mr-16 flex w-full max-w-xs flex-1 transform transition-transform duration-300 ease-in-out ${
+              showMobileSidebar ? 'translate-x-0' : '-translate-x-full'
+            } ${isDark ? "bg-gray-800" : "bg-white"} shadow-xl`}
           >
-            {/* Sidebar Header */}
-            <div
-              className={`flex items-center justify-between p-4 border-b transition-colors duration-300 ${
-                isDark ? "border-gray-700" : "border-gray-200"
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                  <Shield className="w-6 h-6 text-white" />
+            {/* Close button */}
+            <div className="absolute left-full top-0 flex w-16 justify-center pt-5">
+              <button
+                type="button"
+                className="-m-2.5 p-2.5 rounded-md hover:bg-gray-900/20 transition-colors duration-200"
+                onClick={closeMobileSidebar}
+                aria-label="Close sidebar"
+              >
+                <X className="h-6 w-6 text-white" />
+              </button>
+            </div>
+
+            <div className="flex grow flex-col gap-y-5 overflow-y-auto px-6 pb-2">
+              {/* Sidebar Header */}
+              <div className="flex h-16 shrink-0 items-center">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-white" />
                 </div>
-                <div>
+                <div className="ml-3">
                   <h1
                     className={`text-lg font-bold ${
                       isDark ? "text-white" : "text-gray-900"
@@ -369,188 +466,164 @@ const AppContent: React.FC = () => {
                   >
                     SecureCredit
                   </h1>
-                  <p
-                    className={`text-xs ${
-                      isDark ? "text-gray-400" : "text-gray-600"
-                    }`}
-                  >
-                    AI-Powered Financial Security
-                  </p>
                 </div>
               </div>
-              <button
-                onClick={() => setShowMobileSidebar(false)}
-                className={`p-2 rounded-lg transition-colors ${
-                  isDark
-                    ? "hover:bg-gray-700 text-gray-400"
-                    : "hover:bg-gray-100 text-gray-600"
-                }`}
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Navigation Items */}
-            <nav className="p-4 space-y-2">
-              {navigationItems.map((item) => {
-                const IconComponent = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleNavClick(item.id)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                      activeTab === item.id
-                        ? "bg-blue-600 text-white"
-                        : isDark
-                        ? "text-gray-300 hover:text-white hover:bg-gray-700"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                    }`}
-                  >
-                    <IconComponent className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
-
-            {/* User Section */}
-            <div
-              className={`absolute bottom-0 left-0 right-0 p-4 border-t transition-colors duration-300 ${
-                isDark ? "border-gray-700" : "border-gray-200"
-              }`}
-            >
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <User className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex-1">
-                  <p
-                    className={`text-sm font-medium ${
-                      isDark ? "text-white" : "text-gray-900"
-                    }`}
-                  >
-                    {user?.firstName} {user?.lastName}
-                  </p>
-                  <p
-                    className={`text-xs capitalize ${
-                      isDark ? "text-gray-400" : "text-gray-600"
-                    }`}
-                  >
-                    {user?.role}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => {
-                    setShowNotifications(true);
-                    setShowMobileSidebar(false);
-                  }}
-                  className={`flex-1 flex items-center justify-center space-x-2 py-2 px-3 rounded-lg transition-colors ${
-                    isDark
-                      ? "bg-gray-700 hover:bg-gray-600"
-                      : "bg-gray-100 hover:bg-gray-200"
-                  }`}
-                >
-                  <Bell
-                    className={`w-4 h-4 ${
-                      isDark ? "text-gray-300" : "text-gray-600"
-                    }`}
-                  />
-                  <span
-                    className={`text-sm ${
-                      isDark ? "text-gray-300" : "text-gray-600"
-                    }`}
-                  >
-                    Notifications
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowUserProfile(true);
-                    setShowMobileSidebar(false);
-                  }}
-                  className={`flex-1 flex items-center justify-center space-x-2 py-2 px-3 rounded-lg transition-colors ${
-                    isDark
-                      ? "bg-gray-700 hover:bg-gray-600"
-                      : "bg-gray-100 hover:bg-gray-200"
-                  }`}
-                >
-                  <User
-                    className={`w-4 h-4 ${
-                      isDark ? "text-gray-300" : "text-gray-600"
-                    }`}
-                  />
-                  <span
-                    className={`text-sm ${
-                      isDark ? "text-gray-300" : "text-gray-600"
-                    }`}
-                  >
-                    Profile
-                  </span>
-                </button>
-              </div>
-
-              <button
-                onClick={logout}
-                className="w-full mt-2 flex items-center justify-center space-x-2 py-2 px-3 bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
-              >
-                <LogOut className="w-4 h-4 text-white" />
-                <span className="text-sm text-white">Sign Out</span>
-              </button>
+              
+              {/* Navigation */}
+              <nav className="flex flex-1 flex-col">
+                <ul className="flex flex-1 flex-col gap-y-7">
+                  <li>
+                    <ul className="-mx-2 space-y-1">
+                      {navigationItems.map((item) => {
+                        const IconComponent = item.icon;
+                        return (
+                          <li key={item.id}>
+                            <button
+                              onClick={() => handleNavClick(item.id)}
+                              className={`group flex items-center gap-x-3 rounded-md p-3 text-sm leading-6 font-semibold w-full transition-colors duration-200 min-h-[44px] ${
+                                activeTab === item.id
+                                  ? "bg-blue-600 text-white"
+                                  : isDark
+                                  ? "text-gray-300 hover:text-white hover:bg-gray-700"
+                                  : "text-gray-700 hover:text-indigo-600 hover:bg-gray-50"
+                              }`}
+                            >
+                              <IconComponent className="h-6 w-6 shrink-0" />
+                              {item.label}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </li>
+                  
+                  {/* User section at bottom */}
+                  <li className="mt-auto">
+                    <div className={`flex items-center gap-x-4 px-3 py-3 text-sm font-semibold leading-6 border-t ${
+                      isDark ? "border-gray-700" : "border-gray-200"
+                    }`}>
+                      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                        <User className="w-4 h-4 text-white" />
+                      </div>
+                      <span className={isDark ? "text-white" : "text-gray-900"}>
+                        {user?.firstName} {user?.lastName}
+                      </span>
+                    </div>
+                  </li>
+                </ul>
+              </nav>
             </div>
           </div>
         </div>
-      )}
-      {/* Welcome Message */}
-      <div
-        className={`border-b transition-colors duration-300 ${
-          isDark
-            ? "bg-gradient-to-r from-blue-600/10 to-purple-600/10 border-gray-700"
-            : "bg-gradient-to-r from-blue-50 to-purple-50 border-gray-200"
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-3 sm:py-4">
-          <p className={`${isDark ? "text-blue-300" : "text-blue-700"}`}>
-            Welcome back,{" "}
-            <span className="font-semibold">{user?.firstName}</span>! Your
-            account is secure and ready.
-          </p>
-        </div>
       </div>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <Dashboard
-                fraudStats={fraudStats}
-                recentAlerts={recentAlerts}
-                onNavigate={handleNavClick}
-                onShowNotifications={() => setShowNotifications(true)}
-              />
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <Dashboard
-                fraudStats={fraudStats}
-                recentAlerts={recentAlerts}
-                onNavigate={handleNavClick}
-                onShowNotifications={() => setShowNotifications(true)}
-              />
-            }
-          />
-          <Route path="/fraud" element={<FraudDetectionCenter />} />
-          <Route path="/credit" element={<EnhancedCreditScoring />} />
-          <Route path="/security" element={<EnhancedSecurityDashboard />} />
-        </Routes>
-      </main>
+      {/* Main content */}
+      <div className="flex flex-col flex-1 md:pl-64">
+        {/* Mobile spacing for fixed header */}
+        <div className="md:hidden h-16"></div>
+        
+        {/* Desktop Header */}
+        <div className="hidden md:block">
+          <div
+            className={`sticky top-0 z-30 flex h-16 flex-shrink-0 items-center gap-x-4 border-b px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 ${
+              isDark
+                ? "bg-gray-800 border-gray-700"
+                : "bg-white border-gray-200"
+            }`}
+          >
+            <div className="flex flex-1 justify-end">
+              <div className="flex items-center gap-x-4 lg:gap-x-6">
+                {/* Theme Toggle */}
+                <button
+                  onClick={toggleTheme}
+                  className={`p-2 rounded-lg transition-colors ${
+                    isDark
+                      ? "hover:bg-gray-700 text-gray-300 hover:text-white"
+                      : "hover:bg-gray-100 text-gray-600 hover:text-gray-900"
+                  }`}
+                  title={`Switch to ${isDark ? "light" : "dark"} mode`}
+                >
+                  {isDark ? (
+                    <Sun className="w-5 h-5" />
+                  ) : (
+                    <Moon className="w-5 h-5" />
+                  )}
+                </button>
+
+                {/* Notifications */}
+                <button
+                  onClick={() => setShowNotifications(true)}
+                  className={`relative p-2 rounded-lg transition-colors ${
+                    isDark
+                      ? "hover:bg-gray-700 text-gray-300"
+                      : "hover:bg-gray-100 text-gray-600"
+                  }`}
+                  title="Notifications"
+                >
+                  <Bell className="w-5 h-5" />
+                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                </button>
+
+                {/* User Profile */}
+                <button
+                  onClick={() => setShowUserProfile(true)}
+                  className={`flex items-center gap-x-3 px-3 py-2 text-sm font-semibold leading-6 rounded-lg transition-colors ${
+                    isDark 
+                      ? "text-white hover:bg-gray-700" 
+                      : "text-gray-900 hover:bg-gray-100"
+                  }`}
+                  title="User Profile"
+                >
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <User className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="hidden lg:block">
+                    {user?.firstName} {user?.lastName}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Welcome Message */}
+        <div className={`border-b transition-colors duration-300 ${
+          isDark 
+            ? 'bg-gradient-to-r from-blue-600/10 to-purple-600/10 border-gray-700' 
+            : 'bg-gradient-to-r from-blue-50 to-purple-50 border-gray-200'
+        }`}>
+          <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+            <p className={`${
+              isDark ? 'text-blue-300' : 'text-blue-700'
+            }`}>
+              Welcome back,{" "}
+              <span className="font-semibold">{user?.firstName}</span>! Your
+              account is secure and ready.
+            </p>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+          <Routes>
+            <Route path="/" element={<Dashboard 
+              fraudStats={fraudStats} 
+              recentAlerts={recentAlerts} 
+              onNavigate={handleNavClick}
+              onShowNotifications={() => setShowNotifications(true)}
+            />} />
+            <Route path="/dashboard" element={<Dashboard 
+              fraudStats={fraudStats} 
+              recentAlerts={recentAlerts} 
+              onNavigate={handleNavClick}
+              onShowNotifications={() => setShowNotifications(true)}
+            />} />
+            <Route path="/fraud" element={<FraudDetectionCenter />} />
+            <Route path="/credit" element={<EnhancedCreditScoring />} />
+            <Route path="/security" element={<EnhancedSecurityDashboard />} />
+          </Routes>
+        </main>
+      </div>
 
       {/* Modals */}
       <UserProfile

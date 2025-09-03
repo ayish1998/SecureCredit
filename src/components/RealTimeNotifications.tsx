@@ -20,6 +20,7 @@ export const RealTimeNotifications: React.FC<RealTimeNotificationsProps> = ({
   isOpen, 
   onClose 
 }) => {
+  const { isDark } = useTheme();
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
@@ -87,10 +88,10 @@ export const RealTimeNotifications: React.FC<RealTimeNotificationsProps> = ({
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'success': return <CheckCircle className="w-5 h-5 text-green-400" />;
-      case 'warning': return <AlertTriangle className="w-5 h-5 text-yellow-400" />;
-      case 'error': return <AlertTriangle className="w-5 h-5 text-red-400" />;
-      default: return <Info className="w-5 h-5 text-blue-400" />;
+      case 'success': return <CheckCircle className="w-5 h-5 text-green-500" />;
+      case 'warning': return <AlertTriangle className="w-5 h-5 text-yellow-500" />;
+      case 'error': return <AlertTriangle className="w-5 h-5 text-red-500" />;
+      default: return <Info className="w-5 h-5 text-blue-500" />;
     }
   };
 
@@ -123,12 +124,22 @@ export const RealTimeNotifications: React.FC<RealTimeNotificationsProps> = ({
       className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center pt-20 p-4 z-50"
       onClick={handleBackdropClick}
     >
-      <div className="bg-gray-900 rounded-2xl border border-gray-700 w-full max-w-md max-h-[80vh] overflow-hidden">
-        <div className="sticky top-0 bg-gray-900 border-b border-gray-700 p-4">
+      <div className={`rounded-2xl border w-full max-w-md max-h-[80vh] overflow-hidden ${
+        isDark 
+          ? 'bg-gray-900 border-gray-700' 
+          : 'bg-white border-gray-200'
+      }`}>
+        <div className={`sticky top-0 border-b p-4 ${
+          isDark 
+            ? 'bg-gray-900 border-gray-700' 
+            : 'bg-white border-gray-200'
+        }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Bell className="w-5 h-5 text-blue-400" />
-              <h2 className="text-lg font-semibold text-white">Notifications</h2>
+              <h2 className={`text-lg font-semibold ${
+                isDark ? 'text-white' : 'text-gray-900'
+              }`}>Notifications</h2>
               {unreadCount > 0 && (
                 <span className="px-2 py-1 bg-red-500 text-white text-xs rounded-full">
                   {unreadCount}
@@ -146,9 +157,13 @@ export const RealTimeNotifications: React.FC<RealTimeNotificationsProps> = ({
               )}
               <button
                 onClick={onClose}
-                className="p-1 hover:bg-gray-800 rounded transition-colors"
+                className={`p-1 rounded transition-colors ${
+                  isDark 
+                    ? 'hover:bg-gray-800 text-gray-400' 
+                    : 'hover:bg-gray-100 text-gray-600'
+                }`}
               >
-                <X className="w-5 h-5 text-gray-400" />
+                <X className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -157,15 +172,21 @@ export const RealTimeNotifications: React.FC<RealTimeNotificationsProps> = ({
         <div className="max-h-96 overflow-y-auto">
           {notifications.length === 0 ? (
             <div className="p-8 text-center">
-              <Bell className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400">No notifications yet</p>
+              <Bell className={`w-12 h-12 mx-auto mb-4 ${
+                isDark ? 'text-gray-600' : 'text-gray-400'
+              }`} />
+              <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>No notifications yet</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-700">
+            <div className={`divide-y ${
+              isDark ? 'divide-gray-700' : 'divide-gray-200'
+            }`}>
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 hover:bg-gray-800/50 transition-colors cursor-pointer ${
+                  className={`p-4 transition-colors cursor-pointer ${
+                    isDark ? 'hover:bg-gray-800/50' : 'hover:bg-gray-50'
+                  } ${
                     !notification.read ? 'bg-blue-500/5 border-l-2 border-l-blue-500' : ''
                   }`}
                   onClick={() => markAsRead(notification.id)}
@@ -177,7 +198,9 @@ export const RealTimeNotifications: React.FC<RealTimeNotificationsProps> = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <p className={`text-sm font-medium ${
-                          !notification.read ? 'text-white' : 'text-gray-300'
+                          !notification.read 
+                            ? (isDark ? 'text-white' : 'text-gray-900')
+                            : (isDark ? 'text-gray-300' : 'text-gray-600')
                         }`}>
                           {notification.title}
                         </p>
@@ -185,10 +208,14 @@ export const RealTimeNotifications: React.FC<RealTimeNotificationsProps> = ({
                           <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
                         )}
                       </div>
-                      <p className="text-sm text-gray-400 mt-1">
+                      <p className={`text-sm mt-1 ${
+                        isDark ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
                         {notification.message}
                       </p>
-                      <p className="text-xs text-gray-500 mt-2">
+                      <p className={`text-xs mt-2 ${
+                        isDark ? 'text-gray-500' : 'text-gray-500'
+                      }`}>
                         {notification.timestamp.toLocaleTimeString()}
                       </p>
                     </div>
@@ -199,8 +226,14 @@ export const RealTimeNotifications: React.FC<RealTimeNotificationsProps> = ({
           )}
         </div>
 
-        <div className="sticky bottom-0 bg-gray-900 border-t border-gray-700 p-4">
-          <div className="flex items-center justify-between text-xs text-gray-400">
+        <div className={`sticky bottom-0 border-t p-4 ${
+          isDark 
+            ? 'bg-gray-900 border-gray-700' 
+            : 'bg-white border-gray-200'
+        }`}>
+          <div className={`flex items-center justify-between text-xs ${
+            isDark ? 'text-gray-400' : 'text-gray-600'
+          }`}>
             <span>Real-time updates enabled</span>
             <div className="flex items-center space-x-1">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>

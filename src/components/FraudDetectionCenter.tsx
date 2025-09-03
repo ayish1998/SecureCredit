@@ -551,50 +551,53 @@ export const FraudDetectionCenter: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col gap-4">
         <div>
-          <h2 className={`text-xl sm:text-2xl font-bold ${
+          <h2 className={`text-lg sm:text-xl lg:text-2xl font-bold ${
             isDark ? 'text-white' : 'text-gray-900'
           }`}>AI Fraud Detection Center</h2>
           <p className={`text-sm sm:text-base ${
             isDark ? 'text-gray-400' : 'text-gray-600'
           }`}>Real-time fraud detection for Ghanaian mobile money transactions</p>
         </div>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-          <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             <button
               onClick={() => setShowBatchModal(true)}
-              className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center space-x-2"
+              className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-3 sm:px-4 rounded-lg transition-colors flex items-center space-x-2 text-sm"
             >
               <Upload className="w-4 h-4" />
-              <span>Batch Analysis</span>
+              <span className="hidden sm:inline">Batch Analysis</span>
+              <span className="sm:hidden">Batch</span>
             </button>
             <button
               onClick={downloadFraudReport}
-              className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center space-x-2"
+              className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-3 sm:px-4 rounded-lg transition-colors flex items-center space-x-2 text-sm"
               title="Download fraud detection report"
             >
               <Download className="w-4 h-4" />
-              <span>Download Report</span>
+              <span className="hidden sm:inline">Download Report</span>
+              <span className="sm:hidden">Report</span>
             </button>
             <button
               onClick={clearAlerts}
-              className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center space-x-2"
+              className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-3 sm:px-4 rounded-lg transition-colors flex items-center space-x-2 text-sm"
               title="Clear all alerts"
             >
               <Trash2 className="w-4 h-4" />
-              <span>Clear Alerts</span>
+              <span className="hidden sm:inline">Clear Alerts</span>
+              <span className="sm:hidden">Clear</span>
             </button>
           </div>
           <div className="flex items-center space-x-2">
-          <div className={`w-3 h-3 rounded-full animate-pulse ${isMonitoring ? 'bg-green-400' : 'bg-red-400'}`}></div>
-          <span className={`text-sm ${
-            isDark ? 'text-gray-400' : 'text-gray-600'
-          }`}>
-            {isMonitoring ? 'Monitoring Active' : 'Monitoring Inactive'}
-          </span>
+            <div className={`w-3 h-3 rounded-full animate-pulse ${isMonitoring ? 'bg-green-400' : 'bg-red-400'}`}></div>
+            <span className={`text-xs sm:text-sm ${
+              isDark ? 'text-gray-400' : 'text-gray-600'
+            }`}>
+              {isMonitoring ? 'Monitoring Active' : 'Monitoring Inactive'}
+            </span>
           </div>
         </div>
       </div>

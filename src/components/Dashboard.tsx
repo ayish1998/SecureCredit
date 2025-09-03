@@ -39,13 +39,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const { isDark } = useTheme();
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       {/* Hero Section */}
-      <div className="text-center space-y-4 mb-12">
-        <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-4">
+      <div className="text-center space-y-3 sm:space-y-4 mb-8 sm:mb-12 px-4 sm:px-0">
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-2 sm:mb-4">
           Securing Africa's Financial Future
         </h2>
-        <p className={`text-xl max-w-3xl mx-auto ${
+        <p className={`text-base sm:text-lg lg:text-xl max-w-3xl mx-auto leading-relaxed ${
           isDark ? 'text-gray-300' : 'text-gray-600'
         }`}>
           AI-powered fraud detection and credit assessment platform
@@ -54,122 +54,122 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-        <div className={`rounded-xl p-6 border transition-colors duration-300 ${
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+        <div className={`rounded-xl p-4 sm:p-6 border transition-colors duration-300 ${
           isDark 
             ? 'bg-gray-800 border-gray-700' 
             : 'bg-white border-gray-200 shadow-sm'
         }`}>
           <div className="flex items-center justify-between">
-            <div>
-              <p className={`text-sm ${
+            <div className="min-w-0 flex-1">
+              <p className={`text-xs sm:text-sm ${
                 isDark ? 'text-gray-400' : 'text-gray-600'
               }`}>Total Transactions</p>
-              <p className={`text-2xl font-bold ${
+              <p className={`text-lg sm:text-xl lg:text-2xl font-bold truncate ${
                 isDark ? 'text-white' : 'text-gray-900'
               }`}>
                 {fraudStats.totalTransactions.toLocaleString()}
               </p>
             </div>
-            <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-6 h-6 text-blue-400" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-3">
+              <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
             </div>
           </div>
         </div>
 
-        <div className={`rounded-xl p-6 border transition-colors duration-300 ${
+        <div className={`rounded-xl p-4 sm:p-6 border transition-colors duration-300 ${
           isDark 
             ? 'bg-gray-800 border-gray-700' 
             : 'bg-white border-gray-200 shadow-sm'
         }`}>
           <div className="flex items-center justify-between">
-            <div>
-              <p className={`text-sm ${
+            <div className="min-w-0 flex-1">
+              <p className={`text-xs sm:text-sm ${
                 isDark ? 'text-gray-400' : 'text-gray-600'
               }`}>Fraud Detected</p>
-              <p className="text-2xl font-bold text-red-400">
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-red-400 truncate">
                 {fraudStats.fraudDetected.toLocaleString()}
               </p>
             </div>
-            <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-red-400" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-3">
+              <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-red-400" />
             </div>
           </div>
         </div>
 
-        <div className={`rounded-xl p-6 border transition-colors duration-300 ${
+        <div className={`rounded-xl p-4 sm:p-6 border transition-colors duration-300 ${
           isDark 
             ? 'bg-gray-800 border-gray-700' 
             : 'bg-white border-gray-200 shadow-sm'
         }`}>
           <div className="flex items-center justify-between">
-            <div>
-              <p className={`text-sm ${
+            <div className="min-w-0 flex-1">
+              <p className={`text-xs sm:text-sm ${
                 isDark ? 'text-gray-400' : 'text-gray-600'
               }`}>Prevention Rate</p>
-              <p className="text-2xl font-bold text-green-400">
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-green-400 truncate">
                 {fraudStats.fraudPrevented}%
               </p>
             </div>
-            <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-green-400" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-3">
+              <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
             </div>
           </div>
         </div>
 
-        <div className={`rounded-xl p-6 border transition-colors duration-300 ${
+        <div className={`rounded-xl p-4 sm:p-6 border transition-colors duration-300 ${
           isDark 
             ? 'bg-gray-800 border-gray-700' 
             : 'bg-white border-gray-200 shadow-sm'
         }`}>
           <div className="flex items-center justify-between">
-            <div>
-              <p className={`text-sm ${
+            <div className="min-w-0 flex-1">
+              <p className={`text-xs sm:text-sm ${
                 isDark ? 'text-gray-400' : 'text-gray-600'
               }`}>Risk Score</p>
-              <p className="text-2xl font-bold text-yellow-400">
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-yellow-400 truncate">
                 {fraudStats.riskScore}
               </p>
             </div>
-            <div className="w-12 h-12 bg-yellow-500/20 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-yellow-400" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-500/20 rounded-lg flex items-center justify-center flex-shrink-0 ml-3">
+              <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400" />
             </div>
           </div>
         </div>
       </div>
       
 {/* Real-time Activity Feed */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className={`lg:col-span-2 rounded-xl p-6 border transition-colors duration-300 ${
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div className={`lg:col-span-2 rounded-xl p-4 sm:p-6 border transition-colors duration-300 ${
           isDark 
             ? 'bg-gray-800 border-gray-700' 
             : 'bg-white border-gray-200 shadow-sm'
         }`}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className={`text-lg font-semibold ${
+            <h3 className={`text-base sm:text-lg font-semibold ${
               isDark ? 'text-white' : 'text-gray-900'
             }`}>Live Transaction Feed</h3>
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span className={`text-sm ${
+              <span className={`text-xs sm:text-sm ${
                 isDark ? 'text-gray-400' : 'text-gray-600'
               }`}>Live</span>
             </div>
           </div>
-          <div className="space-y-3 max-h-64 overflow-y-auto">
+          <div className="space-y-2 sm:space-y-3 max-h-48 sm:max-h-64 overflow-y-auto">
             {recentAlerts.map((alert) => (
-              <div key={alert.id} className={`flex items-center justify-between p-3 rounded-lg transition-colors duration-300 ${
+              <div key={alert.id} className={`flex items-start sm:items-center justify-between p-2 sm:p-3 rounded-lg transition-colors duration-300 ${
                 isDark 
                   ? 'bg-gray-700/50' 
                   : 'bg-gray-50 hover:bg-gray-100'
               }`}>
-                <div className="flex items-center space-x-3">
-                  <div className={`w-3 h-3 rounded-full ${
+                <div className="flex items-start sm:items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                  <div className={`w-3 h-3 rounded-full flex-shrink-0 mt-1 sm:mt-0 ${
                     alert.type === 'high' ? 'bg-red-400' : 
                     alert.type === 'medium' ? 'bg-yellow-400' : 'bg-green-400'
                   }`}></div>
-                  <div>
-                    <p className={`text-sm ${
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-xs sm:text-sm leading-tight ${
                       isDark ? 'text-white' : 'text-gray-900'
                     }`}>{alert.message}</p>
                     <p className={`text-xs ${
@@ -177,7 +177,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     }`}>{alert.time}</p>
                   </div>
                 </div>
-                <span className="text-sm font-medium text-blue-400">{alert.amount}</span>
+                <span className="text-xs sm:text-sm font-medium text-blue-400 flex-shrink-0 ml-2">{alert.amount}</span>
               </div>
             ))}
           </div>
