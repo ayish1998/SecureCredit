@@ -23,10 +23,18 @@ import {
   Eye,
   EyeOff,
   Signal,
-  Loader
+  Loader,
+  Brain,
+  Cpu,
+  Network,
+  Bug,
+  ShieldCheck
 } from 'lucide-react';
 import { geolocationService, LocationData, LocationRisk } from '../utils/geolocation';
 import { useTheme } from '../contexts/ThemeContext';
+import { aiService } from '../services/aiService';
+import { transformSecurityForAI } from '../utils/aiDataTransformer';
+import { SecurityAssessment } from '../types/ai';
 
 interface SecurityMetrics {
   deviceTrust: number;
@@ -60,6 +68,15 @@ interface SecurityEvent {
   device: string;
 }
 
+interface AISecurityEvent extends SecurityEvent {
+  aiAnalysis?: SecurityAssessment;
+  aiThreatLevel?: number;
+  aiConfidence?: number;
+  aiRecommendations?: string[];
+  vulnerabilities?: string[];
+  mitigationSteps?: string[];
+}
+
 export const FinalEnhancedSecurityDashboard: React.FC = () => {
   const { isDark } = useTheme();
   const [securityMetrics, setSecurityMetrics] = useState<SecurityMetrics>({
@@ -71,7 +88,7 @@ export const FinalEnhancedSecurityDashboard: React.FC = () => {
   });
 
   const [devices, setDevices] = useState<DeviceInfo[]>([]);
-  const [securityEvents, setSecurityEvents] = useState<SecurityEvent[]>([]);
+  const [securityEvents, setSecurityEvents] = useState<AISecurityEvent[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [showDeviceDetails, setShowDeviceDetails] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<DeviceInfo | null>(null);
@@ -79,8 +96,19 @@ export const FinalEnhancedSecurityDashboard: React.FC = () => {
   const [locationRisk, setLocationRisk] = useState<LocationRisk | null>(null);
   const [isLocationLoading, setIsLocationLoading] = useState(false);
   const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
+  
+  // AI Service state
+  const [isAiInitialized, setIsAiInitialized] = useState(false);
+  const [aiServiceStatus, setAiServiceStatus] = useState<any>(null);
+  const [aiAnalysisHistory, setAiAnalysisHistory] = useState<SecurityAssessment[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showAiInsights, setShowAiInsights] = useState(true);
+  const [analyzingEventId, setAnalyzingEventId] = useState<string | null>(null);
 
   useEffect(() => {
+    // Initialize AI service and security monitoring
+    initializeAIService();
+    
     // Initialize with sample data
     const sampleDevices: DeviceInfo[] = [
       {
@@ -118,7 +146,7 @@ export const FinalEnhancedSecurityDashboard: React.FC = () => {
       }
     ];
 
-    const sampleEvents: SecurityEvent[] = [
+    const sampleEvents: AISecurityEvent[] = [
       {
         id: '1',
         type: 'verified',
@@ -158,6 +186,161 @@ export const FinalEnhancedSecurityDashboard: React.FC = () => {
       geolocationService.stopWatching();
     };
   }, []);
+
+  const initializeAIService = async () => {
+    try {
+      await aiService.initialize({
+        enableFallback: true,
+        cacheResults: true,
+      });
+      
+      setIsAiInitialized(true);
+      setAiServiceStatus(aiService.getStatus());
+      
+      // Perform initial AI analysis on existing events
+      performBulkSecurityAnalysis();
+    } catch (error) {
+      console.error('Failed to initialize AI service for security:', error);
+      setIsAiInitialized(false);
+    }
+  };
+
+  const performBulkSecurityAnalysis = async () => {
+    // Analyze existing security events with AI
+    const eventsToAnalyze = securityEvents.filter(event => !event.aiAnalysis);
+    
+    for (const event of eventsToAnalyze.slice(0, 3)) { // Analyze first 3 events
+      await performEnhancedSecurityAnalysis(event);
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Rate limiting
+    }
+  };
+
+  const performEnhancedSecurityAnalysis = async (event: SecurityEvent) => {
+    setIsAnalyzing(true);
+    setAnalyzingEventId(event.id);
+    
+    try {
+      let aiAnalysis: SecurityAssessment | null = null;
+      
+      // If AI service is available, get enhanced analysis
+      if (isAiInitialized) {
+        try {
+          const securityData = {
+            deviceFingerprint: event.device || `device_${event.id}`,
+            loginPatterns: [
+              {
+                timestamp: event.timestamp,
+                location: event.location || 'Unknown',
+                device: event.device || 'Unknown',
+                success: event.type !== 'blocked',
+                ipAddress: generateMockIP(),
+              }
+            ],
+            locationHistory: event.location ? [
+              {
+                city: event.location.split(',')[0] || 'Unknown',
+                country: event.location.split(',')[1]?.trim() || 'Unknown',
+                timestamp: event.timestamp,
+                frequency: 1,
+              }
+            ] : [],
+            behaviorMetrics: {
+              sessionDuration: Math.random() * 1800 + 300, // 5-35 minutes
+              typingSpeed: Math.random() * 50 + 30,
+            },
+            securityEvents: [
+              {
+                type: event.type,
+                severity: event.severity,
+                timestamp: event.timestamp,
+                resolved: false,
+                description: event.message,
+              }
+            ],
+            riskIndicators: generateRiskIndicators(event),
+          };
+
+          const transformedData = transformSecurityForAI(securityData);
+          aiAnalysis = await aiService.analyzeSecurityPattern(transformedData, {
+            userId: 'current_user',
+            priority: event.severity === 'high' ? 'high' : 'medium',
+            analysisType: 'security'
+          });
+          
+          // Add to AI analysis history
+          setAiAnalysisHistory(prev => [aiAnalysis!, ...prev.slice(0, 19)]); // Keep last 20
+          
+        } catch (aiError) {
+          console.error('AI security analysis failed, using fallback:', aiError);
+        }
+      }
+      
+      // Create enhanced security event
+      const enhancedEvent: AISecurityEvent = {
+        ...event,
+        aiAnalysis,
+        aiThreatLevel: aiAnalysis?.threatLevel,
+        aiConfidence: aiAnalysis?.confidence,
+        aiRecommendations: aiAnalysis?.recommendations,
+        vulnerabilities: aiAnalysis?.vulnerabilities,
+        mitigationSteps: aiAnalysis?.mitigationSteps,
+      };
+      
+      // Use AI analysis for final severity if available and confident
+      if (aiAnalysis && aiAnalysis.confidence > 80) {
+        if (aiAnalysis.threatLevel > 70) {
+          enhancedEvent.severity = 'high';
+        } else if (aiAnalysis.threatLevel > 40) {
+          enhancedEvent.severity = 'medium';
+        } else {
+          enhancedEvent.severity = 'low';
+        }
+        
+        enhancedEvent.message = `AI Enhanced: ${aiAnalysis.reasoning.substring(0, 100)}...`;
+      }
+      
+      // Update the event in the list
+      setSecurityEvents(prev => 
+        prev.map(e => e.id === event.id ? enhancedEvent : e)
+      );
+      
+    } catch (error) {
+      console.error('Error in enhanced security analysis:', error);
+    } finally {
+      setIsAnalyzing(false);
+      setAnalyzingEventId(null);
+    }
+  };
+
+  const generateRiskIndicators = (event: SecurityEvent): string[] => {
+    const indicators: string[] = [];
+    
+    if (event.type === 'blocked') {
+      indicators.push('blocked_attempt');
+    }
+    
+    if (event.type === 'location_change') {
+      indicators.push('location_change');
+    }
+    
+    if (event.severity === 'high') {
+      indicators.push('high_severity');
+    }
+    
+    if (event.location === 'Unknown') {
+      indicators.push('unknown_location');
+    }
+    
+    if (event.device === 'Unknown Device') {
+      indicators.push('unknown_device');
+    }
+    
+    return indicators;
+  };
+
+  const generateMockIP = (): string => {
+    return `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
+  };
 
   const initializeLocationTracking = async () => {
     setIsLocationLoading(true);
@@ -235,27 +418,58 @@ export const FinalEnhancedSecurityDashboard: React.FC = () => {
   const runSecurityScan = async () => {
     setIsScanning(true);
     
-    // Simulate comprehensive security scan
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    // Update metrics with some randomization
-    setSecurityMetrics(prev => ({
-      deviceTrust: Math.max(70, Math.min(100, prev.deviceTrust + (Math.random() - 0.5) * 10)),
-      locationRisk: Math.max(0, Math.min(50, prev.locationRisk + (Math.random() - 0.5) * 10)),
-      networkSecurity: Math.max(80, Math.min(100, prev.networkSecurity + (Math.random() - 0.5) * 5)),
-      behaviorScore: Math.max(60, Math.min(100, prev.behaviorScore + (Math.random() - 0.5) * 15)),
-      overallRisk: Math.random() > 0.8 ? 'medium' : 'low'
-    }));
-    
-    // Refresh location data
-    if (locationPermission === 'granted') {
-      const location = await geolocationService.getCurrentLocation();
-      setCurrentLocation(location);
-      const risk = geolocationService.analyzeLocationRisk(location);
-      setLocationRisk(risk);
+    try {
+      // Simulate comprehensive security scan with AI enhancement
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Generate a new security event for AI analysis
+      const newEvent: SecurityEvent = {
+        id: `scan_${Date.now()}`,
+        type: Math.random() > 0.7 ? 'suspicious' : 'verified',
+        message: 'Security scan detected activity',
+        timestamp: 'Just now',
+        severity: Math.random() > 0.8 ? 'high' : Math.random() > 0.5 ? 'medium' : 'low',
+        location: currentLocation ? `${currentLocation.city}, ${currentLocation.country}` : 'Current Location',
+        device: 'Current Device'
+      };
+      
+      // Add the new event and analyze it with AI
+      setSecurityEvents(prev => [newEvent, ...prev.slice(0, 9)]);
+      
+      // Perform AI analysis on the new event
+      if (isAiInitialized) {
+        await performEnhancedSecurityAnalysis(newEvent);
+      }
+      
+      // Update metrics with some randomization and AI influence
+      const aiInfluence = isAiInitialized ? 1.2 : 1.0; // AI provides better accuracy
+      
+      setSecurityMetrics(prev => ({
+        deviceTrust: Math.max(70, Math.min(100, prev.deviceTrust + (Math.random() - 0.5) * 10 * aiInfluence)),
+        locationRisk: Math.max(0, Math.min(50, prev.locationRisk + (Math.random() - 0.5) * 10)),
+        networkSecurity: Math.max(80, Math.min(100, prev.networkSecurity + (Math.random() - 0.5) * 5 * aiInfluence)),
+        behaviorScore: Math.max(60, Math.min(100, prev.behaviorScore + (Math.random() - 0.5) * 15 * aiInfluence)),
+        overallRisk: Math.random() > 0.8 ? 'medium' : 'low'
+      }));
+      
+      // Refresh location data
+      if (locationPermission === 'granted') {
+        const location = await geolocationService.getCurrentLocation();
+        setCurrentLocation(location);
+        const risk = geolocationService.analyzeLocationRisk(location);
+        setLocationRisk(risk);
+      }
+      
+      // Update AI service status
+      if (isAiInitialized) {
+        setAiServiceStatus(aiService.getStatus());
+      }
+      
+    } catch (error) {
+      console.error('Security scan error:', error);
+    } finally {
+      setIsScanning(false);
     }
-    
-    setIsScanning(false);
   };
 
   const getDeviceIcon = (type: string) => {
@@ -331,6 +545,15 @@ export const FinalEnhancedSecurityDashboard: React.FC = () => {
           )}
           
           <button
+            onClick={() => setShowAiInsights(!showAiInsights)}
+            className={`${showAiInsights ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600 hover:bg-gray-700'} text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center space-x-2`}
+            title="Toggle AI insights display"
+          >
+            <Brain className="w-4 h-4" />
+            <span>AI Insights</span>
+          </button>
+          
+          <button
             onClick={runSecurityScan}
             disabled={isScanning}
             className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg transition-colors"
@@ -338,6 +561,24 @@ export const FinalEnhancedSecurityDashboard: React.FC = () => {
             <RefreshCw className={`w-4 h-4 ${isScanning ? 'animate-spin' : ''}`} />
             <span>{isScanning ? 'Scanning...' : 'Security Scan'}</span>
           </button>
+          
+          {/* AI Status Indicators */}
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <div className={`w-3 h-3 rounded-full ${isAiInitialized ? 'bg-blue-400' : 'bg-orange-400'}`}></div>
+              <span className={`text-sm ${textSecondary}`}>
+                AI {isAiInitialized ? 'Ready' : 'Fallback'}
+              </span>
+            </div>
+            {isAnalyzing && (
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                <span className={`text-sm ${textSecondary}`}>
+                  Analyzing...
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -494,6 +735,126 @@ export const FinalEnhancedSecurityDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* AI Security Intelligence */}
+      {showAiInsights && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* AI Service Status */}
+          <div className={cardClass}>
+            <h3 className={`text-lg font-semibold mb-4 flex items-center space-x-2 ${textPrimary}`}>
+              <Brain className="w-5 h-5 text-blue-400" />
+              <span>AI Security Intelligence</span>
+            </h3>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className={`text-sm ${textSecondary}`}>AI Service Status</span>
+                <div className="flex items-center space-x-2">
+                  {isAiInitialized ? (
+                    <ShieldCheck className="w-4 h-4 text-green-400" />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4 text-orange-400" />
+                  )}
+                  <span className={`text-sm font-medium ${
+                    isAiInitialized ? 'text-green-400' : 'text-orange-400'
+                  }`}>
+                    {isAiInitialized ? 'Active' : 'Fallback Mode'}
+                  </span>
+                </div>
+              </div>
+              
+              {aiServiceStatus && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm ${textSecondary}`}>Threat Detection</span>
+                    <span className={`text-sm font-medium ${
+                      aiServiceStatus.aiAvailable ? 'text-green-400' : 'text-orange-400'
+                    }`}>
+                      {aiServiceStatus.aiAvailable ? 'Enhanced' : 'Basic'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm ${textSecondary}`}>Analysis Cache</span>
+                    <span className={`text-sm font-medium ${textPrimary}`}>
+                      {aiServiceStatus.cacheSize} items
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm ${textSecondary}`}>AI Enhanced Events</span>
+                    <span className={`text-sm font-medium ${textPrimary}`}>
+                      {securityEvents.filter(e => e.aiAnalysis).length}
+                    </span>
+                  </div>
+                </>
+              )}
+              
+              <div className="pt-2 border-t border-gray-700">
+                <button
+                  onClick={() => setAiServiceStatus(aiService.getStatus())}
+                  className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  Refresh Status
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent AI Security Analysis */}
+          <div className={cardClass}>
+            <h3 className={`text-lg font-semibold mb-4 flex items-center space-x-2 ${textPrimary}`}>
+              <Activity className="w-5 h-5 text-purple-400" />
+              <span>Recent AI Analysis</span>
+            </h3>
+            
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {aiAnalysisHistory.length === 0 ? (
+                <p className={`text-center py-4 text-sm ${textSecondary}`}>No AI analysis yet</p>
+              ) : (
+                aiAnalysisHistory.slice(0, 5).map((analysis, index) => (
+                  <div key={index} className={`p-3 rounded-lg transition-colors duration-300 ${
+                    isDark 
+                      ? 'bg-gray-700/50' 
+                      : 'bg-gray-50 hover:bg-gray-100'
+                  }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${
+                        analysis.riskLevel === 'low' ? 'bg-green-500/20 text-green-400' :
+                        analysis.riskLevel === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                        analysis.riskLevel === 'high' ? 'bg-orange-500/20 text-orange-400' :
+                        'bg-red-500/20 text-red-400'
+                      }`}>
+                        {analysis.riskLevel}
+                      </span>
+                      <span className={`text-xs ${textSecondary}`}>
+                        {analysis.confidence}% confident
+                      </span>
+                    </div>
+                    <p className={`text-sm mb-1 ${textPrimary}`}>
+                      Threat Level: {analysis.threatLevel}%
+                    </p>
+                    <p className={`text-xs ${textSecondary}`}>
+                      {analysis.reasoning.substring(0, 80)}...
+                    </p>
+                    {analysis.vulnerabilities && analysis.vulnerabilities.length > 0 && (
+                      <div className="mt-2">
+                        <div className="flex flex-wrap gap-1">
+                          {analysis.vulnerabilities.slice(0, 2).map((vuln, idx) => (
+                            <span key={idx} className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded">
+                              {vuln.substring(0, 15)}...
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Devices and Events */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Registered Devices */}
@@ -546,28 +907,93 @@ export const FinalEnhancedSecurityDashboard: React.FC = () => {
           </div>
           
           <div className="space-y-3 max-h-64 overflow-y-auto">
-            {securityEvents.map((event) => (
-              <div key={event.id} className={`flex items-start space-x-3 p-3 rounded-lg ${
-                isDark ? 'bg-gray-700/50' : 'bg-gray-50'
-              }`}>
-                {getEventIcon(event.type)}
-                <div className="flex-1">
-                  <p className={`text-sm ${textPrimary}`}>{event.message}</p>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <span className={`text-xs ${textSecondary}`}>{event.timestamp}</span>
-                    <span className={`text-xs ${textSecondary}`}>•</span>
-                    <span className={`text-xs ${textSecondary}`}>{event.location}</span>
+            {securityEvents.map((event) => {
+              const aiEvent = event as AISecurityEvent;
+              return (
+                <div key={event.id} className={`p-3 rounded-lg transition-colors duration-300 ${
+                  isDark ? 'bg-gray-700/50' : 'bg-gray-50'
+                }`}>
+                  <div className="flex items-start space-x-3">
+                    {getEventIcon(event.type)}
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <p className={`text-sm ${textPrimary}`}>{event.message}</p>
+                        {aiEvent.aiAnalysis && (
+                          <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded font-medium">
+                            AI Enhanced
+                          </span>
+                        )}
+                        {analyzingEventId === event.id && (
+                          <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-2 mb-2">
+                        <span className={`text-xs ${textSecondary}`}>{event.timestamp}</span>
+                        <span className={`text-xs ${textSecondary}`}>•</span>
+                        <span className={`text-xs ${textSecondary}`}>{event.location}</span>
+                      </div>
+                      
+                      {/* AI Recommendations */}
+                      {aiEvent.aiRecommendations && aiEvent.aiRecommendations.length > 0 && (
+                        <div className="mb-2">
+                          <p className={`text-xs mb-1 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                            AI Recommendations:
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {aiEvent.aiRecommendations.slice(0, 2).map((rec, index) => (
+                              <span key={index} className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded">
+                                {rec.substring(0, 20)}...
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Vulnerabilities */}
+                      {aiEvent.vulnerabilities && aiEvent.vulnerabilities.length > 0 && (
+                        <div className="mb-2">
+                          <p className={`text-xs mb-1 ${isDark ? 'text-red-400' : 'text-red-600'}`}>
+                            Vulnerabilities:
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {aiEvent.vulnerabilities.slice(0, 2).map((vuln, index) => (
+                              <span key={index} className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded">
+                                {vuln.substring(0, 15)}...
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex flex-col items-end space-y-1">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        event.severity === 'high' ? 'bg-red-500/20 text-red-400' :
+                        event.severity === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                        'bg-green-500/20 text-green-400'
+                      }`}>
+                        {event.severity}
+                      </span>
+                      {aiEvent.aiThreatLevel && (
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          aiEvent.aiThreatLevel > 70 ? 'bg-red-500/20 text-red-400' :
+                          aiEvent.aiThreatLevel > 50 ? 'bg-orange-500/20 text-orange-400' :
+                          aiEvent.aiThreatLevel > 30 ? 'bg-yellow-500/20 text-yellow-400' :
+                          'bg-green-500/20 text-green-400'
+                        }`}>
+                          AI: {aiEvent.aiThreatLevel}%
+                        </span>
+                      )}
+                      {aiEvent.aiConfidence && (
+                        <span className={`text-xs ${textSecondary}`}>
+                          {aiEvent.aiConfidence}% conf.
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-                <span className={`px-2 py-1 rounded text-xs font-medium ${
-                  event.severity === 'high' ? 'bg-red-500/20 text-red-400' :
-                  event.severity === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                  'bg-green-500/20 text-green-400'
-                }`}>
-                  {event.severity}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, Shield, Brain, Zap, Clock, TrendingUp, MapPin, Users, Activity, Upload, FileText, Download, Trash2 } from 'lucide-react';
+import { AlertTriangle, Shield, Brain, Zap, Clock, TrendingUp, MapPin, Users, Activity, Upload, FileText, Download, Trash2, Eye, CheckCircle, XCircle } from 'lucide-react';
 import { simpleFraudDetectionAI } from '../utils/simpleFraudDetection';
+import { aiService } from '../services/aiService';
+import { transformTransactionForAI } from '../utils/aiDataTransformer';
 import { useFraudDetection } from '../contexts/FraudDetectionContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { Transaction, FraudPrediction, FraudAlert } from '../types/fraud';
+import { FraudAnalysis } from '../types/ai';
 import { DataAdapter } from '../utils/dataAdapter';
+
+interface AIFraudPrediction extends FraudPrediction {
+  aiAnalysis?: FraudAnalysis;
+  aiConfidence?: number;
+  aiRecommendations?: string[];
+  suspiciousPatterns?: string[];
+}
 
 export const FraudDetectionCenter: React.FC = () => {
   const { isDark } = useTheme();
@@ -17,6 +27,15 @@ export const FraudDetectionCenter: React.FC = () => {
     clearPredictions, 
     downloadFraudReport 
   } = useFraudDetection();
+  
+  // AI Service state
+  const [aiServiceStatus, setAiServiceStatus] = useState<any>(null);
+  const [isAiInitialized, setIsAiInitialized] = useState(false);
+  const [aiAnalysisHistory, setAiAnalysisHistory] = useState<FraudAnalysis[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showAiInsights, setShowAiInsights] = useState(true);
+  
+  // Existing state
   const [modelMetrics, setModelMetrics] = useState<any>(null);
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [testTransaction, setTestTransaction] = useState<Partial<Transaction>>({
@@ -25,13 +44,14 @@ export const FraudDetectionCenter: React.FC = () => {
     merchantCategory: 'unknown'
   });
   const [csvData, setCsvData] = useState<string>('');
-  const [batchResults, setBatchResults] = useState<FraudPrediction[]>([]);
+  const [batchResults, setBatchResults] = useState<AIFraudPrediction[]>([]);
   const [isProcessingBatch, setIsProcessingBatch] = useState(false);
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
 
   useEffect(() => {
-    // Initialize fraud monitoring
+    // Initialize AI service and fraud monitoring
+    initializeAIService();
     setIsMonitoring(true);
 
     // Get model metrics
@@ -39,13 +59,300 @@ export const FraudDetectionCenter: React.FC = () => {
 
     // Simulate real-time transactions for demo
     const interval = setInterval(() => {
-      simulateTransaction();
-    }, 3000); // Every 3 seconds for more active demo
+      simulateEnhancedTransaction();
+    }, 4000); // Slightly slower for AI processing
 
     return () => {
       clearInterval(interval);
     };
   }, []);
+
+  const initializeAIService = async () => {
+    try {
+      await aiService.initialize({
+        enableFallback: true,
+        cacheResults: true,
+      });
+      
+      setIsAiInitialized(true);
+      setAiServiceStatus(aiService.getStatus());
+    } catch (error) {
+      console.error('Failed to initialize AI service:', error);
+      setIsAiInitialized(false);
+    }
+  };
+
+  const simulateEnhancedTransaction = async () => {
+    if (!isMonitoring) return;
+
+    // Use existing transaction generation logic
+    const transactions = DataAdapter.generateTransactionStream(1);
+    if (transactions.length === 0) return;
+    
+    const mockTransaction = transactions[0];
+    
+    // Generate transaction using existing logic but with AI enhancement
+    const realScenarios = [
+      // Normal transactions (50% chance)
+      () => {
+        const normalUsers = ['Kwame_Asante', 'Ama_Osei', 'Kofi_Mensah', 'Akosua_Boateng', 'Yaw_Oppong'];
+        const normalMerchants = ['MTN_Mobile_Money', 'Vodafone_Cash', 'AirtelTigo_Money', 'Zeepay_Ghana'];
+        const normalLocations = ['Accra_Osu', 'Kumasi_Kejetia', 'Tamale_Central', 'Cape_Coast_Market'];
+        
+        const user = normalUsers[Math.floor(Math.random() * normalUsers.length)];
+        const merchant = normalMerchants[Math.floor(Math.random() * normalMerchants.length)];
+        const location = normalLocations[Math.floor(Math.random() * normalLocations.length)];
+        
+        return {
+          id: `GHS_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+          amount: Math.floor(Math.random() * 300 + 20), // 20-320 GHS
+          currency: 'GHS',
+          timestamp: new Date().toISOString(),
+          type: ['send_money', 'bill_payment', 'airtime'][Math.floor(Math.random() * 3)] as any,
+          location: location.replace('_', ', ') + ', Ghana',
+          merchantCategory: ['grocery', 'utilities', 'transport', 'telecom'][Math.floor(Math.random() * 4)],
+          description: `Payment to ${merchant}`,
+          agentInfo: {
+            id: `verified_agent_${location}`,
+            trustScore: 0.85 + Math.random() * 0.15,
+            location: location.replace('_', ', ')
+          },
+          deviceFingerprint: {
+            deviceId: `${user}_primary_device`,
+            isNewDevice: false,
+            trustScore: 0.8 + Math.random() * 0.2
+          },
+          userProfile: {
+            userId: user,
+            lastKnownLocation: location.replace('_', ', ') + ', Ghana',
+            recentTransactions: [],
+            riskProfile: 'low' as any
+          },
+          networkTrust: 0.8 + Math.random() * 0.2,
+          pinAttempts: 1
+        };
+      },
+      
+      // Suspicious transactions (30% chance)
+      () => {
+        const suspiciousPatterns = [
+          {
+            type: 'late_night_large',
+            user: 'Unknown_User_' + Math.floor(Math.random() * 1000),
+            amount: Math.floor(Math.random() * 1200 + 500),
+            location: 'Unverified_Location',
+            merchant: 'Unknown_Merchant',
+            description: 'Urgent transfer - family emergency'
+          },
+          {
+            type: 'new_device_transfer',
+            user: 'Suspicious_' + Math.floor(Math.random() * 500),
+            amount: Math.floor(Math.random() * 800 + 300),
+            location: 'Different_Region',
+            merchant: 'Investment_Opportunity',
+            description: 'Quick investment return'
+          },
+          {
+            type: 'multiple_attempts',
+            user: 'Compromised_' + Math.floor(Math.random() * 200),
+            amount: Math.floor(Math.random() * 600 + 200),
+            location: 'Remote_Area',
+            merchant: 'Cash_Out_Agent',
+            description: 'Emergency cash withdrawal'
+          }
+        ];
+        
+        const pattern = suspiciousPatterns[Math.floor(Math.random() * suspiciousPatterns.length)];
+        
+        return {
+          id: `SUSP_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+          amount: pattern.amount,
+          currency: 'GHS',
+          timestamp: new Date().toISOString(),
+          type: ['cash_out', 'send_money'][Math.floor(Math.random() * 2)] as any,
+          location: pattern.location.replace('_', ' '),
+          merchantCategory: pattern.type === 'new_device_transfer' ? 'investment' : 'unknown',
+          description: pattern.description,
+          agentInfo: {
+            id: `unverified_agent_${Math.floor(Math.random() * 100)}`,
+            trustScore: 0.2 + Math.random() * 0.4,
+            location: 'Unverified'
+          },
+          deviceFingerprint: {
+            deviceId: `new_device_${Date.now()}`,
+            isNewDevice: pattern.type === 'new_device_transfer',
+            trustScore: 0.1 + Math.random() * 0.4
+          },
+          userProfile: {
+            userId: pattern.user,
+            lastKnownLocation: 'Different Location',
+            recentTransactions: [],
+            riskProfile: 'medium' as any
+          },
+          networkTrust: 0.2 + Math.random() * 0.4,
+          pinAttempts: pattern.type === 'multiple_attempts' ? Math.floor(Math.random() * 3) + 2 : 1
+        };
+      },
+      
+      // High-risk fraud attempts (20% chance)
+      () => {
+        const fraudTypes = [
+          {
+            type: 'SIM_SWAP_ATTACK',
+            user: 'VICTIM_' + Math.floor(Math.random() * 100),
+            amount: Math.floor(Math.random() * 2500 + 1000),
+            description: 'SIM swap - unauthorized device access detected',
+            location: 'Foreign_IP_Address'
+          },
+          {
+            type: 'SOCIAL_ENGINEERING',
+            user: 'ELDERLY_' + Math.floor(Math.random() * 50),
+            amount: Math.floor(Math.random() * 1800 + 800),
+            description: 'Fake customer service call - urgent transfer request',
+            location: 'Call_Center_Scam'
+          },
+          {
+            type: 'INVESTMENT_SCAM',
+            user: 'TARGET_' + Math.floor(Math.random() * 200),
+            amount: Math.floor(Math.random() * 3000 + 500),
+            description: 'Ponzi scheme - promise of 300% returns',
+            location: 'Fake_Investment_Office'
+          }
+        ];
+        
+        const fraud = fraudTypes[Math.floor(Math.random() * fraudTypes.length)];
+        
+        return {
+          id: `FRAUD_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+          amount: fraud.amount,
+          currency: 'GHS',
+          timestamp: new Date().toISOString(),
+          type: 'cash_out' as any,
+          location: fraud.location.replace('_', ' '),
+          merchantCategory: fraud.type === 'INVESTMENT_SCAM' ? 'lottery' : 'unknown',
+          description: fraud.description,
+          agentInfo: {
+            id: `blacklisted_agent_${Math.floor(Math.random() * 20)}`,
+            trustScore: Math.random() * 0.2,
+            location: 'Blacklisted'
+          },
+          deviceFingerprint: {
+            deviceId: `compromised_device_${Date.now()}`,
+            isNewDevice: true,
+            trustScore: Math.random() * 0.15
+          },
+          userProfile: {
+            userId: fraud.user,
+            lastKnownLocation: 'Original Location',
+            recentTransactions: [],
+            riskProfile: 'high' as any
+          },
+          networkTrust: Math.random() * 0.2,
+          pinAttempts: Math.floor(Math.random() * 5) + 3
+        };
+      }
+    ];
+    
+    // Select scenario based on realistic probability
+    const rand = Math.random();
+    let transaction: Transaction;
+    
+    if (rand < 0.5) {
+      transaction = realScenarios[0](); // Normal (50%)
+    } else if (rand < 0.8) {
+      transaction = realScenarios[1](); // Suspicious (30%)
+    } else {
+      transaction = realScenarios[2](); // High-risk (20%)
+    }
+    
+    try {
+      // Enhanced analysis with AI
+      await performEnhancedFraudAnalysis(transaction);
+    } catch (error) {
+      console.error('Error in enhanced transaction simulation:', error);
+      // Fallback to simple analysis
+      const prediction = await simpleFraudDetectionAI.predictFraud(transaction);
+      addPrediction(prediction);
+    }
+  };
+
+  const performEnhancedFraudAnalysis = async (transaction: Transaction) => {
+    setIsAnalyzing(true);
+    
+    try {
+      // First, get the simple AI prediction for comparison
+      const simplePrediction = await simpleFraudDetectionAI.predictFraud(transaction);
+      
+      // If AI service is available, get enhanced analysis
+      let aiAnalysis: FraudAnalysis | null = null;
+      if (isAiInitialized) {
+        try {
+          const transformedData = transformTransactionForAI(transaction);
+          aiAnalysis = await aiService.analyzeFraudRisk(transformedData, {
+            userId: transaction.userProfile?.userId || 'unknown',
+            priority: simplePrediction.riskLevel === 'critical' ? 'high' : 'medium',
+            analysisType: 'fraud'
+          });
+          
+          // Add to AI analysis history
+          setAiAnalysisHistory(prev => [aiAnalysis!, ...prev.slice(0, 19)]); // Keep last 20
+        } catch (aiError) {
+          console.error('AI analysis failed, using fallback:', aiError);
+        }
+      }
+      
+      // Create enhanced prediction combining both analyses
+      const enhancedPrediction: AIFraudPrediction = {
+        ...simplePrediction,
+        aiAnalysis,
+        aiConfidence: aiAnalysis?.confidence,
+        aiRecommendations: aiAnalysis?.recommendations,
+        suspiciousPatterns: aiAnalysis?.suspiciousPatterns,
+      };
+      
+      // Use AI analysis for final decision if available and confident
+      if (aiAnalysis && aiAnalysis.confidence > 80) {
+        enhancedPrediction.riskScore = aiAnalysis.fraudProbability / 100;
+        enhancedPrediction.riskLevel = aiAnalysis.riskLevel;
+        enhancedPrediction.isFraudulent = aiAnalysis.fraudProbability > 70;
+        enhancedPrediction.confidence = aiAnalysis.confidence / 100;
+        enhancedPrediction.explanation = `AI Enhanced: ${aiAnalysis.reasoning}`;
+        enhancedPrediction.recommendedAction = aiAnalysis.riskLevel === 'critical' ? 'BLOCK_IMMEDIATELY' :
+                                              aiAnalysis.riskLevel === 'high' ? 'REQUIRE_VERIFICATION' :
+                                              aiAnalysis.riskLevel === 'medium' ? 'MONITOR_CLOSELY' : 'ALLOW';
+      }
+      
+      // Add to recent predictions
+      addPrediction(enhancedPrediction);
+      
+      // Create enhanced alerts
+      if (['medium', 'high', 'critical'].includes(enhancedPrediction.riskLevel)) {
+        const alertMessage = aiAnalysis 
+          ? `AI ENHANCED ALERT: ${aiAnalysis.reasoning.substring(0, 100)}...`
+          : `${enhancedPrediction.riskLevel.toUpperCase()} RISK: ${transaction.description}`;
+        
+        const alert: FraudAlert = {
+          id: `ai_alert_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+          transactionId: enhancedPrediction.transactionId,
+          alertType: enhancedPrediction.riskLevel === 'critical' ? 'fraud_detected' : 'suspicious_pattern',
+          severity: enhancedPrediction.riskLevel,
+          message: alertMessage,
+          timestamp: new Date().toISOString(),
+          status: 'active'
+        };
+        
+        addAlert(alert);
+      }
+      
+    } catch (error) {
+      console.error('Error in enhanced fraud analysis:', error);
+      // Fallback to simple prediction
+      const fallbackPrediction = await simpleFraudDetectionAI.predictFraud(transaction);
+      addPrediction(fallbackPrediction);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const simulateTransaction = async () => {
     if (!isMonitoring) return;
@@ -319,56 +626,16 @@ export const FraudDetectionCenter: React.FC = () => {
         pinAttempts: riskFactors.isHighRisk ? Math.floor(Math.random() * 4) + 2 : 1
       };
 
-      console.log('Testing fraud detection with transaction:', transaction);
+      console.log('Testing enhanced fraud detection with transaction:', transaction);
       
-      const prediction = await simpleFraudDetectionAI.predictFraud(transaction);
-      
-      console.log('Fraud detection result:', prediction);
-      
-      // Add to recent predictions
-      addPrediction(prediction);
-      
-      // Create specific alert for test transactions
-      if (['medium', 'high', 'critical'].includes(prediction.riskLevel)) {
-        const testAlertMessages = {
-          medium: [
-            `Test transaction flagged: ${transaction.amount} GHS to ${transaction.merchantCategory} merchant`,
-            `Manual test detected unusual pattern for ${transaction.type} transaction`,
-            `Test alert: Device trust score ${((transaction.deviceFingerprint?.trustScore || 0) * 100).toFixed(0)}% below threshold`
-          ],
-          high: [
-            `TEST ALERT: High-risk ${transaction.amount} GHS transaction detected`,
-            `Manual fraud test triggered: ${transaction.pinAttempts} PIN attempts from ${transaction.deviceFingerprint?.isNewDevice ? 'new' : 'known'} device`,
-            `Test scenario: Suspicious ${transaction.type} to ${transaction.location}`
-          ],
-          critical: [
-            `CRITICAL TEST ALERT: Fraud detection system activated`,
-            `Manual test: ${prediction.detectedPatterns.map(p => p.type).join(', ')} patterns detected`,
-            `Test simulation: Immediate intervention required for ${transaction.amount} GHS`
-          ]
-        };
-        
-        const messages = testAlertMessages[prediction.riskLevel as keyof typeof testAlertMessages];
-        const selectedMessage = messages[Math.floor(Math.random() * messages.length)];
-        
-        const alert: FraudAlert = {
-          id: `test_alert_${Date.now()}`,
-          transactionId: prediction.transactionId,
-          alertType: prediction.riskLevel === 'critical' ? 'fraud_detected' : 'suspicious_pattern',
-          severity: prediction.riskLevel,
-          message: selectedMessage,
-          timestamp: new Date().toISOString(),
-          status: 'active'
-        };
-        
-        addAlert(alert);
-      }
+      // Use enhanced analysis for test
+      await performEnhancedFraudAnalysis(transaction);
       
     } catch (error) {
-      console.error('Error in fraud detection test:', error);
+      console.error('Error in enhanced fraud detection test:', error);
       
       // Create fallback prediction for demo
-      const fallbackPrediction: FraudPrediction = {
+      const fallbackPrediction: AIFraudPrediction = {
         transactionId: `test_fallback_${Date.now()}`,
         riskScore: Math.random() * 0.6 + 0.2,
         riskLevel: 'medium',
@@ -377,7 +644,9 @@ export const FraudDetectionCenter: React.FC = () => {
         detectedPatterns: [],
         explanation: 'Test transaction processed with fallback method due to processing error',
         recommendedAction: 'MONITOR_CLOSELY - Test transaction',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        aiAnalysis: undefined,
+        aiConfidence: undefined
       };
       
       addPrediction(fallbackPrediction);
@@ -573,6 +842,15 @@ export const FraudDetectionCenter: React.FC = () => {
               <span className="sm:hidden">Batch</span>
             </button>
             <button
+              onClick={() => setShowAiInsights(!showAiInsights)}
+              className={`${showAiInsights ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600 hover:bg-gray-700'} text-white font-medium py-2 px-3 sm:px-4 rounded-lg transition-colors flex items-center space-x-2 text-sm`}
+              title="Toggle AI insights display"
+            >
+              <Brain className="w-4 h-4" />
+              <span className="hidden sm:inline">AI Insights</span>
+              <span className="sm:hidden">AI</span>
+            </button>
+            <button
               onClick={downloadFraudReport}
               className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-3 sm:px-4 rounded-lg transition-colors flex items-center space-x-2 text-sm"
               title="Download fraud detection report"
@@ -591,13 +869,33 @@ export const FraudDetectionCenter: React.FC = () => {
               <span className="sm:hidden">Clear</span>
             </button>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className={`w-3 h-3 rounded-full animate-pulse ${isMonitoring ? 'bg-green-400' : 'bg-red-400'}`}></div>
-            <span className={`text-xs sm:text-sm ${
-              isDark ? 'text-gray-400' : 'text-gray-600'
-            }`}>
-              {isMonitoring ? 'Monitoring Active' : 'Monitoring Inactive'}
-            </span>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <div className={`w-3 h-3 rounded-full animate-pulse ${isMonitoring ? 'bg-green-400' : 'bg-red-400'}`}></div>
+              <span className={`text-xs sm:text-sm ${
+                isDark ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                {isMonitoring ? 'Monitoring Active' : 'Monitoring Inactive'}
+              </span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className={`w-3 h-3 rounded-full ${isAiInitialized ? 'bg-blue-400' : 'bg-orange-400'}`}></div>
+              <span className={`text-xs sm:text-sm ${
+                isDark ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                AI {isAiInitialized ? 'Ready' : 'Fallback'}
+              </span>
+            </div>
+            {isAnalyzing && (
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                <span className={`text-xs sm:text-sm ${
+                  isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>
+                  Analyzing...
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -668,6 +966,153 @@ export const FraudDetectionCenter: React.FC = () => {
                 }`}>Ready</p>
               </div>
               <Zap className="w-8 h-8 text-yellow-400" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Service Status and Insights */}
+      {showAiInsights && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          {/* AI Service Status */}
+          <div className={`rounded-xl p-6 border transition-colors duration-300 ${
+            isDark 
+              ? 'bg-gray-800 border-gray-700' 
+              : 'bg-white border-gray-200 shadow-sm'
+          }`}>
+            <h3 className={`text-lg font-semibold mb-4 flex items-center space-x-2 ${
+              isDark ? 'text-white' : 'text-gray-900'
+            }`}>
+              <Brain className="w-5 h-5 text-blue-400" />
+              <span>AI Service Status</span>
+            </h3>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className={`text-sm ${
+                  isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>Service Status</span>
+                <div className="flex items-center space-x-2">
+                  {isAiInitialized ? (
+                    <CheckCircle className="w-4 h-4 text-green-400" />
+                  ) : (
+                    <XCircle className="w-4 h-4 text-red-400" />
+                  )}
+                  <span className={`text-sm font-medium ${
+                    isAiInitialized ? 'text-green-400' : 'text-red-400'
+                  }`}>
+                    {isAiInitialized ? 'Active' : 'Fallback Mode'}
+                  </span>
+                </div>
+              </div>
+              
+              {aiServiceStatus && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>AI Available</span>
+                    <span className={`text-sm font-medium ${
+                      aiServiceStatus.aiAvailable ? 'text-green-400' : 'text-orange-400'
+                    }`}>
+                      {aiServiceStatus.aiAvailable ? 'Yes' : 'No'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>Cache Size</span>
+                    <span className={`text-sm font-medium ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      {aiServiceStatus.cacheSize} items
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>Fallback Enabled</span>
+                    <span className={`text-sm font-medium ${
+                      aiServiceStatus.fallbackEnabled ? 'text-green-400' : 'text-red-400'
+                    }`}>
+                      {aiServiceStatus.fallbackEnabled ? 'Yes' : 'No'}
+                    </span>
+                  </div>
+                </>
+              )}
+              
+              <div className="pt-2 border-t border-gray-700">
+                <button
+                  onClick={() => setAiServiceStatus(aiService.getStatus())}
+                  className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  Refresh Status
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent AI Analysis */}
+          <div className={`rounded-xl p-6 border transition-colors duration-300 ${
+            isDark 
+              ? 'bg-gray-800 border-gray-700' 
+              : 'bg-white border-gray-200 shadow-sm'
+          }`}>
+            <h3 className={`text-lg font-semibold mb-4 flex items-center space-x-2 ${
+              isDark ? 'text-white' : 'text-gray-900'
+            }`}>
+              <Activity className="w-5 h-5 text-purple-400" />
+              <span>Recent AI Analysis</span>
+            </h3>
+            
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {aiAnalysisHistory.length === 0 ? (
+                <p className={`text-center py-4 text-sm ${
+                  isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>No AI analysis yet</p>
+              ) : (
+                aiAnalysisHistory.slice(0, 5).map((analysis, index) => (
+                  <div key={index} className={`p-3 rounded-lg transition-colors duration-300 ${
+                    isDark 
+                      ? 'bg-gray-700/50' 
+                      : 'bg-gray-50 hover:bg-gray-100'
+                  }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${getRiskColor(analysis.riskLevel)}`}>
+                        {analysis.riskLevel}
+                      </span>
+                      <span className={`text-xs ${
+                        isDark ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
+                        {analysis.confidence}% confident
+                      </span>
+                    </div>
+                    <p className={`text-sm mb-1 ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      Fraud Risk: {analysis.fraudProbability}%
+                    </p>
+                    <p className={`text-xs ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      {analysis.reasoning.substring(0, 80)}...
+                    </p>
+                    {analysis.suspiciousPatterns && analysis.suspiciousPatterns.length > 0 && (
+                      <div className="mt-2">
+                        <div className="flex flex-wrap gap-1">
+                          {analysis.suspiciousPatterns.slice(0, 2).map((pattern, idx) => (
+                            <span key={idx} className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded">
+                              {pattern.substring(0, 15)}...
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -834,47 +1279,96 @@ export const FraudDetectionCenter: React.FC = () => {
                 isDark ? 'text-gray-400' : 'text-gray-600'
               }`}>No predictions yet</p>
             ) : (
-              recentPredictions.map((prediction) => (
-                <div key={prediction.transactionId} className={`p-3 rounded-lg transition-colors duration-300 ${
-                  isDark 
-                    ? 'bg-gray-700/50' 
-                    : 'bg-gray-50 hover:bg-gray-100'
-                }`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${getRiskColor(prediction.riskLevel)}`}>
-                      {prediction.riskLevel}
-                    </span>
-                    <div className="text-right">
-                      <p className={`text-xs ${
-                        isDark ? 'text-gray-400' : 'text-gray-600'
-                      }`}>Risk Score</p>
-                      <p className={`text-sm font-medium ${
-                        isDark ? 'text-white' : 'text-gray-900'
-                      }`}>{(prediction.riskScore * 100).toFixed(1)}%</p>
-                    </div>
-                  </div>
-                  <p className={`text-sm mb-1 ${
-                    isDark ? 'text-white' : 'text-gray-900'
-                  }`}>{prediction.explanation}</p>
-                  <p className={`text-xs ${
-                    isDark ? 'text-gray-400' : 'text-gray-600'
-                  }`}>{prediction.recommendedAction}</p>
-                  {prediction.detectedPatterns.length > 0 && (
-                    <div className="mt-2">
-                      <p className={`text-xs ${
-                        isDark ? 'text-gray-400' : 'text-gray-600'
-                      }`}>Detected Patterns:</p>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {prediction.detectedPatterns.map((pattern, index) => (
-                          <span key={index} className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded">
-                            {pattern.type}
+              recentPredictions.map((prediction) => {
+                const aiPrediction = prediction as AIFraudPrediction;
+                return (
+                  <div key={prediction.transactionId} className={`p-3 rounded-lg transition-colors duration-300 ${
+                    isDark 
+                      ? 'bg-gray-700/50' 
+                      : 'bg-gray-50 hover:bg-gray-100'
+                  }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${getRiskColor(prediction.riskLevel)}`}>
+                          {prediction.riskLevel}
+                        </span>
+                        {aiPrediction.aiAnalysis && (
+                          <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded font-medium">
+                            AI Enhanced
                           </span>
-                        ))}
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-xs ${
+                          isDark ? 'text-gray-400' : 'text-gray-600'
+                        }`}>Risk Score</p>
+                        <p className={`text-sm font-medium ${
+                          isDark ? 'text-white' : 'text-gray-900'
+                        }`}>{(prediction.riskScore * 100).toFixed(1)}%</p>
+                        {aiPrediction.aiConfidence && (
+                          <p className={`text-xs ${
+                            isDark ? 'text-blue-400' : 'text-blue-600'
+                          }`}>AI: {aiPrediction.aiConfidence}%</p>
+                        )}
                       </div>
                     </div>
-                  )}
-                </div>
-              ))
+                    <p className={`text-sm mb-1 ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>{prediction.explanation}</p>
+                    <p className={`text-xs ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>{prediction.recommendedAction}</p>
+                    
+                    {/* AI Recommendations */}
+                    {aiPrediction.aiRecommendations && aiPrediction.aiRecommendations.length > 0 && (
+                      <div className="mt-2">
+                        <p className={`text-xs ${
+                          isDark ? 'text-blue-400' : 'text-blue-600'
+                        }`}>AI Recommendations:</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {aiPrediction.aiRecommendations.slice(0, 2).map((rec, index) => (
+                            <span key={index} className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded">
+                              {rec.substring(0, 20)}...
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Suspicious Patterns */}
+                    {aiPrediction.suspiciousPatterns && aiPrediction.suspiciousPatterns.length > 0 && (
+                      <div className="mt-2">
+                        <p className={`text-xs ${
+                          isDark ? 'text-red-400' : 'text-red-600'
+                        }`}>Suspicious Patterns:</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {aiPrediction.suspiciousPatterns.slice(0, 2).map((pattern, index) => (
+                            <span key={index} className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded">
+                              {pattern.substring(0, 15)}...
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Traditional Detected Patterns */}
+                    {prediction.detectedPatterns.length > 0 && (
+                      <div className="mt-2">
+                        <p className={`text-xs ${
+                          isDark ? 'text-gray-400' : 'text-gray-600'
+                        }`}>Detected Patterns:</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {prediction.detectedPatterns.map((pattern, index) => (
+                            <span key={index} className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded">
+                              {pattern.type}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
         </div>

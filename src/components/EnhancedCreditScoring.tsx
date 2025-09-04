@@ -25,10 +25,16 @@ import {
   Calendar,
   CreditCard,
   Smartphone,
-  X
+  X,
+  Brain,
+  Activity,
+  RefreshCw
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { DataAdapter } from '../utils/dataAdapter';
+import { aiService } from '../services/aiService';
+import { transformCreditForAI } from '../utils/aiDataTransformer';
+import { CreditEnhancement } from '../types/ai';
 
 interface CreditProfile {
   id: string;
@@ -55,16 +61,24 @@ interface AIInsight {
   impact: number;
 }
 
+interface AIEnhancedProfile extends CreditProfile {
+  aiAnalysis?: CreditEnhancement;
+  aiEnhancedScore?: number;
+  aiConfidence?: number;
+  aiRecommendations?: string[];
+  lastAiAnalysis?: string;
+}
+
 export const EnhancedCreditScoring: React.FC = () => {
   const { isDark } = useTheme();
-  const [creditProfiles, setCreditProfiles] = useState<CreditProfile[]>([]);
+  const [creditProfiles, setCreditProfiles] = useState<AIEnhancedProfile[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRisk, setFilterRisk] = useState<string>('all');
-  const [selectedProfile, setSelectedProfile] = useState<CreditProfile | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<AIEnhancedProfile | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editingProfile, setEditingProfile] = useState<CreditProfile | null>(null);
+  const [editingProfile, setEditingProfile] = useState<AIEnhancedProfile | null>(null);
   const [analyzingProfileId, setAnalyzingProfileId] = useState<string | null>(null);
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([]);
   const [newProfile, setNewProfile] = useState<Partial<CreditProfile>>({
@@ -75,8 +89,17 @@ export const EnhancedCreditScoring: React.FC = () => {
     location: '',
     mobileMoneyProvider: 'MTN Mobile Money'
   });
+  
+  // AI Service state
+  const [isAiInitialized, setIsAiInitialized] = useState(false);
+  const [aiServiceStatus, setAiServiceStatus] = useState<any>(null);
+  const [aiAnalysisHistory, setAiAnalysisHistory] = useState<CreditEnhancement[]>([]);
+  const [showAiInsights, setShowAiInsights] = useState(true);
 
   useEffect(() => {
+    // Initialize AI service
+    initializeAIService();
+    
     // Generate initial credit profiles using sophisticated Ghanaian fraud dataset
     const initialProfiles = DataAdapter.generateCreditProfiles(12);
     setCreditProfiles(initialProfiles);
@@ -330,39 +353,156 @@ export const EnhancedCreditScoring: React.FC = () => {
     setCreditProfiles(sampleProfiles);
   }, []);
 
-  const analyzeProfile = async (profile: CreditProfile) => {
+  const initializeAIService = async () => {
+    try {
+      await aiService.initialize({
+        enableFallback: true,
+        cacheResults: true,
+      });
+      
+      setIsAiInitialized(true);
+      setAiServiceStatus(aiService.getStatus());
+    } catch (error) {
+      console.error('Failed to initialize AI service for credit scoring:', error);
+      setIsAiInitialized(false);
+    }
+  };
+
+  const analyzeProfile = async (profile: AIEnhancedProfile) => {
     setAnalyzingProfileId(profile.id);
     setSelectedProfile(profile);
     
-    // Simulate AI analysis
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const insights: AIInsight[] = [
-      {
-        type: profile.paymentHistory > 90 ? 'positive' : 'negative',
-        message: `Payment history of ${profile.paymentHistory}% ${profile.paymentHistory > 90 ? 'shows excellent reliability' : 'indicates some payment delays'}`,
-        impact: profile.paymentHistory > 90 ? 25 : -15
-      },
-      {
-        type: profile.creditUtilization < 50 ? 'positive' : 'negative',
-        message: `Credit utilization at ${profile.creditUtilization}% ${profile.creditUtilization < 50 ? 'demonstrates good financial discipline' : 'suggests high debt burden'}`,
-        impact: profile.creditUtilization < 50 ? 20 : -20
-      },
-      {
-        type: profile.accountAge > 24 ? 'positive' : 'neutral',
-        message: `Account age of ${profile.accountAge} months ${profile.accountAge > 24 ? 'shows established financial history' : 'indicates newer financial relationship'}`,
-        impact: profile.accountAge > 24 ? 15 : 0
-      },
-      {
-        type: profile.transactionHistory > 100 ? 'positive' : 'neutral',
-        message: `${profile.transactionHistory} transactions ${profile.transactionHistory > 100 ? 'demonstrate active financial engagement' : 'show moderate activity'}`,
-        impact: profile.transactionHistory > 100 ? 10 : 5
+    try {
+      let aiAnalysis: CreditEnhancement | null = null;
+      
+      // If AI service is available, get enhanced analysis
+      if (isAiInitialized) {
+        try {
+          const creditData = {
+            creditScore: profile.score,
+            income: profile.monthlyIncome,
+            employmentStatus: 'employed', // Assume employed for demo
+            creditHistory: [
+              {
+                type: 'mobile_money',
+                status: 'active',
+                balance: profile.monthlyIncome * 0.1,
+                openDate: new Date(Date.now() - profile.accountAge * 30 * 24 * 60 * 60 * 1000).toISOString(),
+              }
+            ],
+            existingDebts: profile.monthlyIncome * (profile.creditUtilization / 100),
+            paymentHistory: Array.from({ length: Math.min(profile.transactionHistory, 12) }, (_, i) => ({
+              amount: Math.random() * 200 + 50,
+              date: new Date(Date.now() - i * 30 * 24 * 60 * 60 * 1000).toISOString(),
+              status: 'completed',
+              onTime: Math.random() > (100 - profile.paymentHistory) / 100,
+            })),
+            demographics: {
+              region: profile.location.split(',')[1]?.trim() || 'Unknown',
+              employmentSector: 'Technology',
+              educationLevel: 'Secondary',
+            }
+          };
+
+          const transformedData = transformCreditForAI(creditData);
+          aiAnalysis = await aiService.enhanceCreditScoring(transformedData, {
+            userId: profile.id,
+            priority: profile.score < 600 ? 'high' : 'medium',
+            analysisType: 'credit'
+          });
+          
+          // Add to AI analysis history
+          setAiAnalysisHistory(prev => [aiAnalysis!, ...prev.slice(0, 19)]); // Keep last 20
+          
+          // Update profile with AI analysis
+          const updatedProfile: AIEnhancedProfile = {
+            ...profile,
+            aiAnalysis,
+            aiEnhancedScore: aiAnalysis.enhancedScore,
+            aiConfidence: aiAnalysis.confidence,
+            aiRecommendations: aiAnalysis.recommendations,
+            lastAiAnalysis: new Date().toISOString(),
+          };
+          
+          // Update the profile in the list
+          setCreditProfiles(prev => prev.map(p => p.id === profile.id ? updatedProfile : p));
+          setSelectedProfile(updatedProfile);
+          
+        } catch (aiError) {
+          console.error('AI analysis failed, using fallback:', aiError);
+        }
       }
-    ];
-    
-    setAiInsights(insights);
-    setAnalyzingProfileId(null);
-    setShowDetailModal(true);
+      
+      // Generate insights from AI analysis or fallback to traditional analysis
+      const insights: AIInsight[] = aiAnalysis ? [
+        {
+          type: aiAnalysis.enhancedScore > profile.score ? 'positive' : 'negative',
+          message: `AI enhanced score: ${aiAnalysis.enhancedScore} (${aiAnalysis.enhancedScore > profile.score ? '+' : ''}${aiAnalysis.enhancedScore - profile.score} points)`,
+          impact: aiAnalysis.enhancedScore - profile.score
+        },
+        {
+          type: aiAnalysis.riskLevel === 'low' ? 'positive' : aiAnalysis.riskLevel === 'high' ? 'negative' : 'neutral',
+          message: `AI risk assessment: ${aiAnalysis.riskLevel} risk with ${aiAnalysis.confidence}% confidence`,
+          impact: aiAnalysis.riskLevel === 'low' ? 20 : aiAnalysis.riskLevel === 'high' ? -20 : 0
+        },
+        {
+          type: 'neutral',
+          message: aiAnalysis.reasoning,
+          impact: 0
+        },
+        ...aiAnalysis.recommendations.slice(0, 2).map(rec => ({
+          type: 'positive' as const,
+          message: `Recommendation: ${rec}`,
+          impact: 5
+        }))
+      ] : [
+        // Fallback traditional insights
+        {
+          type: profile.paymentHistory > 90 ? 'positive' : 'negative',
+          message: `Payment history of ${profile.paymentHistory}% ${profile.paymentHistory > 90 ? 'shows excellent reliability' : 'indicates some payment delays'}`,
+          impact: profile.paymentHistory > 90 ? 25 : -15
+        },
+        {
+          type: profile.creditUtilization < 50 ? 'positive' : 'negative',
+          message: `Credit utilization at ${profile.creditUtilization}% ${profile.creditUtilization < 50 ? 'demonstrates good financial discipline' : 'suggests high debt burden'}`,
+          impact: profile.creditUtilization < 50 ? 20 : -20
+        },
+        {
+          type: profile.accountAge > 24 ? 'positive' : 'neutral',
+          message: `Account age of ${profile.accountAge} months ${profile.accountAge > 24 ? 'shows established financial history' : 'indicates newer financial relationship'}`,
+          impact: profile.accountAge > 24 ? 15 : 0
+        },
+        {
+          type: profile.transactionHistory > 100 ? 'positive' : 'neutral',
+          message: `${profile.transactionHistory} transactions ${profile.transactionHistory > 100 ? 'demonstrate active financial engagement' : 'show moderate activity'}`,
+          impact: profile.transactionHistory > 100 ? 10 : 5
+        }
+      ];
+      
+      setAiInsights(insights);
+      
+    } catch (error) {
+      console.error('Error in credit analysis:', error);
+      
+      // Fallback insights
+      const fallbackInsights: AIInsight[] = [
+        {
+          type: 'neutral',
+          message: 'Analysis completed using traditional scoring methods',
+          impact: 0
+        },
+        {
+          type: profile.score > 700 ? 'positive' : 'negative',
+          message: `Current score of ${profile.score} indicates ${profile.score > 700 ? 'good' : 'fair'} creditworthiness`,
+          impact: profile.score > 700 ? 10 : -10
+        }
+      ];
+      
+      setAiInsights(fallbackInsights);
+    } finally {
+      setAnalyzingProfileId(null);
+      setShowDetailModal(true);
+    }
   };
 
   const getRiskColor = (risk: string) => {
@@ -484,6 +624,15 @@ export const EnhancedCreditScoring: React.FC = () => {
             </select>
 
             <button
+              onClick={() => setShowAiInsights(!showAiInsights)}
+              className={`${showAiInsights ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600 hover:bg-gray-700'} text-white font-medium py-2 px-3 sm:px-4 rounded-lg transition-colors flex items-center space-x-2 text-sm`}
+              title="Toggle AI insights display"
+            >
+              <Brain className="w-4 h-4" />
+              <span className="hidden sm:inline">AI Insights</span>
+            </button>
+
+            <button
               onClick={() => setShowAddModal(true)}
               className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm sm:text-base whitespace-nowrap"
             >
@@ -492,6 +641,40 @@ export const EnhancedCreditScoring: React.FC = () => {
               <span className="hidden sm:inline">Add User</span>
             </button>
           </div>
+        </div>
+        
+        {/* AI Service Status */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <div className={`w-3 h-3 rounded-full ${isAiInitialized ? 'bg-green-400' : 'bg-orange-400'}`}></div>
+              <span className={`text-xs sm:text-sm ${
+                isDark ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                AI Credit Analysis {isAiInitialized ? 'Active' : 'Fallback Mode'}
+              </span>
+            </div>
+            {analyzingProfileId && (
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                <span className={`text-xs sm:text-sm ${
+                  isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>
+                  Analyzing...
+                </span>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => setAiServiceStatus(aiService.getStatus())}
+            className={`text-xs ${
+              isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-700'
+            } transition-colors flex items-center space-x-1`}
+            title="Refresh AI service status"
+          >
+            <RefreshCw className="w-3 h-3" />
+            <span>Refresh</span>
+          </button>
         </div>
       </div>
 
@@ -566,6 +749,144 @@ export const EnhancedCreditScoring: React.FC = () => {
         </div>
       </div>
 
+      {/* AI Service Status and Insights */}
+      {showAiInsights && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          {/* AI Service Status */}
+          <div className={`rounded-xl p-6 border transition-colors duration-300 ${
+            isDark 
+              ? 'bg-gray-800 border-gray-700' 
+              : 'bg-white border-gray-200 shadow-sm'
+          }`}>
+            <h3 className={`text-lg font-semibold mb-4 flex items-center space-x-2 ${
+              isDark ? 'text-white' : 'text-gray-900'
+            }`}>
+              <Brain className="w-5 h-5 text-blue-400" />
+              <span>AI Credit Analysis Status</span>
+            </h3>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className={`text-sm ${
+                  isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>Service Status</span>
+                <div className="flex items-center space-x-2">
+                  {isAiInitialized ? (
+                    <CheckCircle className="w-4 h-4 text-green-400" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-orange-400" />
+                  )}
+                  <span className={`text-sm font-medium ${
+                    isAiInitialized ? 'text-green-400' : 'text-orange-400'
+                  }`}>
+                    {isAiInitialized ? 'Active' : 'Fallback Mode'}
+                  </span>
+                </div>
+              </div>
+              
+              {aiServiceStatus && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>AI Available</span>
+                    <span className={`text-sm font-medium ${
+                      aiServiceStatus.aiAvailable ? 'text-green-400' : 'text-orange-400'
+                    }`}>
+                      {aiServiceStatus.aiAvailable ? 'Yes' : 'No'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>Cache Size</span>
+                    <span className={`text-sm font-medium ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      {aiServiceStatus.cacheSize} items
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>Enhanced Profiles</span>
+                    <span className={`text-sm font-medium ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      {creditProfiles.filter(p => p.aiAnalysis).length}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Recent AI Analysis */}
+          <div className={`rounded-xl p-6 border transition-colors duration-300 ${
+            isDark 
+              ? 'bg-gray-800 border-gray-700' 
+              : 'bg-white border-gray-200 shadow-sm'
+          }`}>
+            <h3 className={`text-lg font-semibold mb-4 flex items-center space-x-2 ${
+              isDark ? 'text-white' : 'text-gray-900'
+            }`}>
+              <Activity className="w-5 h-5 text-purple-400" />
+              <span>Recent AI Analysis</span>
+            </h3>
+            
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {aiAnalysisHistory.length === 0 ? (
+                <p className={`text-center py-4 text-sm ${
+                  isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>No AI analysis yet</p>
+              ) : (
+                aiAnalysisHistory.slice(0, 5).map((analysis, index) => (
+                  <div key={index} className={`p-3 rounded-lg transition-colors duration-300 ${
+                    isDark 
+                      ? 'bg-gray-700/50' 
+                      : 'bg-gray-50 hover:bg-gray-100'
+                  }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${getRiskColor(analysis.riskLevel === 'low' ? 'Excellent' : analysis.riskLevel === 'medium' ? 'Good' : 'Poor')}`}>
+                        {analysis.riskLevel}
+                      </span>
+                      <span className={`text-xs ${
+                        isDark ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
+                        {analysis.confidence}% confident
+                      </span>
+                    </div>
+                    <p className={`text-sm mb-1 ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      Enhanced Score: {analysis.enhancedScore}
+                    </p>
+                    <p className={`text-xs ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      {analysis.reasoning.substring(0, 80)}...
+                    </p>
+                    {analysis.recommendations && analysis.recommendations.length > 0 && (
+                      <div className="mt-2">
+                        <div className="flex flex-wrap gap-1">
+                          {analysis.recommendations.slice(0, 2).map((rec, idx) => (
+                            <span key={idx} className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded">
+                              {rec.substring(0, 15)}...
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Credit Profiles List */}
       <div className={`rounded-xl border transition-colors duration-300 ${
         isDark 
@@ -613,6 +934,13 @@ export const EnhancedCreditScoring: React.FC = () => {
                     <div className={`text-lg font-bold ${
                       isDark ? 'text-white' : 'text-gray-900'
                     }`}>{profile.score}</div>
+                    {profile.aiEnhancedScore && profile.aiEnhancedScore !== profile.score && (
+                      <div className={`text-sm font-medium ${
+                        profile.aiEnhancedScore > profile.score ? 'text-green-400' : 'text-red-400'
+                      }`}>
+                        AI: {profile.aiEnhancedScore}
+                      </div>
+                    )}
                     <div className={`text-xs ${
                       isDark ? 'text-gray-400' : 'text-gray-600'
                     }`}>Score</div>
@@ -622,6 +950,11 @@ export const EnhancedCreditScoring: React.FC = () => {
                     <div className={`px-2 py-1 rounded text-xs font-medium ${getRiskColor(profile.risk)}`}>
                       {profile.risk}
                     </div>
+                    {profile.aiAnalysis && (
+                      <div className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded mt-1 font-medium">
+                        AI Enhanced
+                      </div>
+                    )}
                     <div className={`text-xs mt-1 ${
                       isDark ? 'text-gray-400' : 'text-gray-600'
                     }`}>Risk</div>
@@ -648,7 +981,9 @@ export const EnhancedCreditScoring: React.FC = () => {
                     <button
                       onClick={() => analyzeProfile(profile)}
                       disabled={analyzingProfileId === profile.id}
-                      className="flex items-center space-x-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg transition-colors text-sm"
+                      className={`flex items-center space-x-1 px-3 py-2 ${
+                        profile.aiAnalysis ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
+                      } disabled:bg-gray-600 text-white rounded-lg transition-colors text-sm`}
                     >
                       {analyzingProfileId === profile.id ? (
                         <>
@@ -657,8 +992,10 @@ export const EnhancedCreditScoring: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          <Zap className="w-4 h-4" />
-                          <span className="hidden sm:inline">AI Analysis</span>
+                          {profile.aiAnalysis ? <CheckCircle className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
+                          <span className="hidden sm:inline">
+                            {profile.aiAnalysis ? `${profile.aiConfidence}%` : 'AI Analysis'}
+                          </span>
                         </>
                       )}
                     </button>

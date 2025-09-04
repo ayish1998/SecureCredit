@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { User, Settings, LogOut, Shield, Bell, CreditCard, Activity } from 'lucide-react';
+import { User, Settings, LogOut, Shield, Bell, CreditCard, Activity, Brain } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { AISettings } from './AISettings';
 
 interface UserProfileProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
   const { user, logout } = useAuth();
   const { isDark } = useTheme();
   const [activeTab, setActiveTab] = useState('profile');
+  const [showAISettings, setShowAISettings] = useState(false);
 
   if (!isOpen || !user) return null;
 
@@ -88,6 +90,18 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
             }`}
           >
             Security
+          </button>
+          <button
+            onClick={() => setActiveTab('ai-settings')}
+            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'ai-settings'
+                ? 'text-blue-400 border-b-2 border-blue-400'
+                : isDark 
+                  ? 'text-gray-400 hover:text-white' 
+                  : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            AI Settings
           </button>
           <button
             onClick={() => setActiveTab('activity')}
@@ -290,6 +304,92 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
             </div>
           )}
 
+          {activeTab === 'ai-settings' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h4 className={`font-medium ${
+                  isDark ? 'text-white' : 'text-gray-900'
+                }`}>AI Configuration</h4>
+                <button
+                  onClick={() => setShowAISettings(true)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors flex items-center space-x-2"
+                >
+                  <Brain className="w-4 h-4" />
+                  <span>Open AI Settings</span>
+                </button>
+              </div>
+              
+              <div className={`p-4 rounded-lg transition-colors duration-300 ${
+                isDark ? 'bg-gray-800' : 'bg-gray-50'
+              }`}>
+                <p className={`text-sm ${
+                  isDark ? 'text-gray-300' : 'text-gray-600'
+                }`}>
+                  Configure AI service settings, manage API keys, monitor usage, and control AI features. 
+                  Access advanced configuration options to optimize AI performance for your needs.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className={`p-4 rounded-lg transition-colors duration-300 ${
+                  isDark ? 'bg-gray-800' : 'bg-gray-50'
+                }`}>
+                  <div className="flex items-center space-x-3 mb-2">
+                    <Shield className="w-5 h-5 text-green-400" />
+                    <span className={`font-medium ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>Fraud Detection</span>
+                  </div>
+                  <p className={`text-sm ${
+                    isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>AI-powered fraud analysis</p>
+                </div>
+
+                <div className={`p-4 rounded-lg transition-colors duration-300 ${
+                  isDark ? 'bg-gray-800' : 'bg-gray-50'
+                }`}>
+                  <div className="flex items-center space-x-3 mb-2">
+                    <CreditCard className="w-5 h-5 text-blue-400" />
+                    <span className={`font-medium ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>Credit Scoring</span>
+                  </div>
+                  <p className={`text-sm ${
+                    isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Enhanced credit assessment</p>
+                </div>
+
+                <div className={`p-4 rounded-lg transition-colors duration-300 ${
+                  isDark ? 'bg-gray-800' : 'bg-gray-50'
+                }`}>
+                  <div className="flex items-center space-x-3 mb-2">
+                    <Shield className="w-5 h-5 text-yellow-400" />
+                    <span className={`font-medium ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>Security Analysis</span>
+                  </div>
+                  <p className={`text-sm ${
+                    isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Device security monitoring</p>
+                </div>
+
+                <div className={`p-4 rounded-lg transition-colors duration-300 ${
+                  isDark ? 'bg-gray-800' : 'bg-gray-50'
+                }`}>
+                  <div className="flex items-center space-x-3 mb-2">
+                    <Brain className="w-5 h-5 text-purple-400" />
+                    <span className={`font-medium ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>General Insights</span>
+                  </div>
+                  <p className={`text-sm ${
+                    isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Business intelligence</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'activity' && (
             <div className="space-y-4">
               <div className={`flex items-center space-x-3 p-3 rounded-lg transition-colors duration-300 ${
@@ -337,6 +437,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
               </div>
             </div>
           )}
+
+
         </div>
 
         <div className={`border-t p-6 flex justify-between transition-colors duration-300 ${
@@ -361,6 +463,12 @@ export const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => 
           </button>
         </div>
       </div>
+
+      {/* AI Settings Modal */}
+      <AISettings
+        isOpen={showAISettings}
+        onClose={() => setShowAISettings(false)}
+      />
     </div>
   );
 };

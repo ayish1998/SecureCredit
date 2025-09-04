@@ -3,28 +3,23 @@ import {
   Shield, 
   AlertTriangle, 
   CheckCircle, 
-  Eye, 
-  EyeOff, 
   Smartphone, 
   Globe, 
-  Lock, 
-  Unlock,
+  Lock,
   MapPin,
   Clock,
   Wifi,
   Monitor,
   Fingerprint,
   Activity,
-  Zap,
   RefreshCw,
   TrendingUp,
   TrendingDown,
-  BarChart3,
   Navigation,
   Satellite,
-  Radio
+  Radio,
+  Brain
 } from 'lucide-react';
-import { geolocationService } from '../utils/geolocation';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface SecurityMetrics {
@@ -86,7 +81,6 @@ export const EnhancedSecurityDashboard: React.FC = () => {
   const [selectedDevice, setSelectedDevice] = useState<DeviceInfo | null>(null);
   const [currentLocation, setCurrentLocation] = useState<LocationInfo | null>(null);
   const [isLocationLoading, setIsLocationLoading] = useState(true);
-  const [locationHistory, setLocationHistory] = useState<LocationInfo[]>([]);
 
   useEffect(() => {
     // Start real-time location tracking
@@ -95,7 +89,7 @@ export const EnhancedSecurityDashboard: React.FC = () => {
         setIsLocationLoading(true);
         
         // Simulate location detection with realistic data
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         const mockLocation: LocationInfo = {
           city: 'Accra',
@@ -110,7 +104,6 @@ export const EnhancedSecurityDashboard: React.FC = () => {
         };
         
         setCurrentLocation(mockLocation);
-        setLocationHistory(prev => [mockLocation, ...prev.slice(0, 9)]);
         
         // Update security metrics based on location
         setSecurityMetrics(prev => ({
@@ -141,20 +134,6 @@ export const EnhancedSecurityDashboard: React.FC = () => {
     };
 
     initializeLocation();
-
-    // Simulate periodic location updates (optional)
-    const locationUpdateInterval = setInterval(() => {
-      if (currentLocation) {
-        // Simulate minor location changes
-        const updatedLocation: LocationInfo = {
-          ...currentLocation,
-          accuracy: Math.floor(Math.random() * 100) + 20,
-          lastUpdated: new Date().toISOString()
-        };
-        
-        setCurrentLocation(updatedLocation);
-      }
-    }, 30000); // Update every 30 seconds
 
     // Initialize with sample data
     const sampleDevices: DeviceInfo[] = [
@@ -234,10 +213,6 @@ export const EnhancedSecurityDashboard: React.FC = () => {
 
     setDevices(sampleDevices);
     setSecurityEvents(sampleEvents);
-
-    return () => {
-      clearInterval(locationUpdateInterval);
-    };
   }, []);
 
   const runSecurityScan = async () => {
