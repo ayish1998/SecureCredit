@@ -18,6 +18,7 @@ import {
   Network
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { AIResponseDisplay, AIResponseCard } from './AIResponseDisplay';
 import { aiService } from '../services/aiService';
 import { AIAnalysisResponse, FraudAnalysis, CreditEnhancement, SecurityAssessment } from '../types/ai';
 
@@ -295,10 +296,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
     <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       {/* Hero Section */}
       <div className="text-center space-y-3 sm:space-y-4 mb-8 sm:mb-12 px-4 sm:px-0">
-        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-2 sm:mb-4">
+        <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-2 sm:mb-4">
           Securing Africa's Financial Future
         </h2>
-        <p className={`text-base sm:text-lg lg:text-xl max-w-3xl mx-auto leading-relaxed ${
+        <p className={`text-sm sm:text-base md:text-lg lg:text-xl max-w-3xl mx-auto leading-relaxed ${
           isDark ? 'text-gray-300' : 'text-gray-600'
         }`}>
           AI-powered fraud detection and credit assessment platform
@@ -380,9 +381,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
             
             {/* AI Service Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4">
               <div className="text-center">
-                <div className={`text-lg font-bold ${
+                <div className={`text-base sm:text-lg font-bold ${
                   isDark ? 'text-white' : 'text-gray-900'
                 }`}>{aiMetrics.totalAnalyses.toLocaleString()}</div>
                 <div className={`text-xs ${
@@ -390,7 +391,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 }`}>Total Analyses</div>
               </div>
               <div className="text-center">
-                <div className={`text-lg font-bold ${
+                <div className={`text-base sm:text-lg font-bold ${
                   aiMetrics.averageConfidence > 90 ? 'text-green-400' :
                   aiMetrics.averageConfidence > 80 ? 'text-yellow-400' : 'text-red-400'
                 }`}>{aiMetrics.averageConfidence.toFixed(1)}%</div>
@@ -399,7 +400,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 }`}>Avg Confidence</div>
               </div>
               <div className="text-center">
-                <div className={`text-lg font-bold ${
+                <div className={`text-base sm:text-lg font-bold ${
                   isDark ? 'text-white' : 'text-gray-900'
                 }`}>{aiMetrics.activeModels}</div>
                 <div className={`text-xs ${
@@ -407,7 +408,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 }`}>Active Models</div>
               </div>
               <div className="text-center">
-                <div className={`text-lg font-bold ${
+                <div className={`text-base sm:text-lg font-bold ${
                   aiMetrics.processingTime < 2 ? 'text-green-400' :
                   aiMetrics.processingTime < 5 ? 'text-yellow-400' : 'text-red-400'
                 }`}>{aiMetrics.processingTime.toFixed(1)}s</div>
@@ -416,7 +417,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 }`}>Avg Processing</div>
               </div>
               <div className="text-center">
-                <div className={`text-lg font-bold ${
+                <div className={`text-base sm:text-lg font-bold ${
                   aiMetrics.cacheHitRate > 80 ? 'text-green-400' :
                   aiMetrics.cacheHitRate > 60 ? 'text-yellow-400' : 'text-red-400'
                 }`}>{aiMetrics.cacheHitRate.toFixed(1)}%</div>
@@ -425,7 +426,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 }`}>Cache Hit Rate</div>
               </div>
               <div className="text-center">
-                <div className={`text-lg font-bold ${
+                <div className={`text-base sm:text-lg font-bold ${
                   aiMetrics.errorRate < 2 ? 'text-green-400' :
                   aiMetrics.errorRate < 5 ? 'text-yellow-400' : 'text-red-400'
                 }`}>{aiMetrics.errorRate.toFixed(1)}%</div>
@@ -439,97 +440,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {/* AI Insights Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {aiInsights.map((insight, index) => (
-              <div key={index} className={`rounded-xl p-6 border transition-colors duration-300 ${
-                isDark 
-                  ? 'bg-gray-800 border-gray-700' 
-                  : 'bg-white border-gray-200 shadow-sm'
-              }`}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                      insight.type === 'fraud' ? 'bg-red-500/20' :
-                      insight.type === 'credit' ? 'bg-green-500/20' :
-                      'bg-blue-500/20'
-                    }`}>
-                      {getInsightIcon(insight.type)}
-                    </div>
-                    <div>
-                      <h4 className={`font-semibold ${
-                        isDark ? 'text-white' : 'text-gray-900'
-                      }`}>{insight.title}</h4>
-                      <p className={`text-xs ${
-                        isDark ? 'text-gray-400' : 'text-gray-600'
-                      }`}>{insight.lastUpdated}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {getTrendIcon(insight.trend)}
-                    {insight.riskLevel && (
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        insight.riskLevel === 'low' ? 'bg-green-500/20 text-green-400' :
-                        insight.riskLevel === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                        insight.riskLevel === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                        'bg-red-500/20 text-red-400'
-                      }`}>
-                        {insight.riskLevel.toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="mb-4">
-                  <div className={`text-2xl font-bold mb-1 ${
-                    isDark ? 'text-white' : 'text-gray-900'
-                  }`}>{insight.value}</div>
-                  <div className="flex items-center space-x-2 mb-3">
-                    <div className={`flex-1 rounded-full h-2 ${
-                      isDark ? 'bg-gray-700' : 'bg-gray-200'
-                    }`}>
-                      <div 
-                        className={`h-2 rounded-full ${
-                          insight.confidence > 90 ? 'bg-green-400' :
-                          insight.confidence > 80 ? 'bg-yellow-400' :
-                          'bg-red-400'
-                        }`}
-                        style={{ width: `${insight.confidence}%` }}
-                      ></div>
-                    </div>
-                    <span className={`text-sm font-medium ${
-                      isDark ? 'text-white' : 'text-gray-900'
-                    }`}>{insight.confidence}%</span>
-                  </div>
-                  
-                  {/* AI Recommendations */}
-                  {insight.recommendations && insight.recommendations.length > 0 && (
-                    <div className="mb-3">
-                      <p className={`text-xs mb-2 ${
-                        isDark ? 'text-gray-400' : 'text-gray-600'
-                      }`}>AI Recommendations:</p>
-                      <div className="space-y-1">
-                        {insight.recommendations.slice(0, 2).map((rec, idx) => (
-                          <div key={idx} className={`text-xs p-2 rounded ${
-                            isDark ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-50 text-gray-700'
-                          }`}>
-                            • {rec}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <button
-                  onClick={() => onNavigate(insight.type)}
-                  className={`w-full flex items-center justify-center space-x-2 py-2 px-4 rounded-lg transition-colors ${
-                    isDark 
-                      ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                  }`}
-                >
-                  <Zap className="w-4 h-4" />
-                  <span className="text-sm">View Details</span>
-                </button>
-              </div>
+              <AIResponseDisplay
+                key={index}
+                content={`${insight.title}\n\n${insight.value}\n\n${insight.recommendations ? insight.recommendations.join('\n') : ''}`}
+                type={insight.type as 'fraud' | 'credit' | 'security'}
+                confidence={insight.confidence}
+                showHeader={true}
+                compact={false}
+              />
             ))}
           </div>
 
@@ -554,46 +472,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </button>
               </div>
               
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {aiAnalysisHistory.slice(0, 10).map((analysis) => (
-                  <div key={analysis.id} className={`flex items-center justify-between p-3 rounded-lg ${
-                    isDark ? 'bg-gray-700/50' : 'bg-gray-50'
-                  }`}>
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                        analysis.type === 'fraud' ? 'bg-red-500/20' :
-                        analysis.type === 'credit' ? 'bg-green-500/20' :
-                        'bg-blue-500/20'
-                      }`}>
-                        {getInsightIcon(analysis.type)}
-                      </div>
-                      <div>
-                        <p className={`text-sm font-medium ${
-                          isDark ? 'text-white' : 'text-gray-900'
-                        }`}>{analysis.result}</p>
-                        <p className={`text-xs ${
-                          isDark ? 'text-gray-400' : 'text-gray-600'
-                        }`}>
-                          {new Date(analysis.timestamp).toLocaleTimeString()} • {analysis.processingTime.toFixed(2)}s
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className={`text-xs font-medium ${
-                        analysis.confidence > 90 ? 'text-green-400' :
-                        analysis.confidence > 80 ? 'text-yellow-400' : 'text-red-400'
-                      }`}>
-                        {analysis.confidence.toFixed(0)}%
-                      </span>
-                      <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${
-                        analysis.type === 'fraud' ? 'bg-red-500/20 text-red-400' :
-                        analysis.type === 'credit' ? 'bg-green-500/20 text-green-400' :
-                        'bg-blue-500/20 text-blue-400'
-                      }`}>
-                        {analysis.type}
-                      </span>
-                    </div>
-                  </div>
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {aiAnalysisHistory.slice(0, 5).map((analysis) => (
+                  <AIResponseCard
+                    key={analysis.id}
+                    content={analysis.result}
+                    type={analysis.type as 'fraud' | 'credit' | 'security'}
+                    confidence={analysis.confidence}
+                    processingTime={analysis.processingTime}
+                    timestamp={new Date(analysis.timestamp)}
+                    maxLength={120}
+                  />
                 ))}
               </div>
               
@@ -625,7 +514,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       )}
 
       {/* Enhanced Stats Cards with AI Indicators */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <div className={`rounded-xl p-4 sm:p-6 border transition-colors duration-300 ${
           isDark 
             ? 'bg-gray-800 border-gray-700' 
@@ -876,7 +765,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       {/* Features Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className={`rounded-xl p-6 border transition-all duration-300 group ${
           isDark 
             ? 'bg-gray-800 border-gray-700 hover:border-blue-500/50' 
@@ -1012,7 +901,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <h3 className={`text-lg font-semibold mb-4 ${
           isDark ? 'text-white' : 'text-gray-900'
         }`}>Quick Actions</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           <button 
             onClick={() => onNavigate('fraud')}
             className={`flex items-center space-x-2 p-3 rounded-lg transition-colors ${

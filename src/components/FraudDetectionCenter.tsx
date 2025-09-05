@@ -5,6 +5,7 @@ import { aiService } from '../services/aiService';
 import { transformTransactionForAI } from '../utils/aiDataTransformer';
 import { useFraudDetection } from '../contexts/FraudDetectionContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { AIResponseDisplay, AIResponseCard } from './AIResponseDisplay';
 import { Transaction, FraudPrediction, FraudAlert } from '../types/fraud';
 import { FraudAnalysis } from '../types/ai';
 import { DataAdapter } from '../utils/dataAdapter';
@@ -1281,92 +1282,23 @@ export const FraudDetectionCenter: React.FC = () => {
             ) : (
               recentPredictions.map((prediction) => {
                 const aiPrediction = prediction as AIFraudPrediction;
+                const content = `${prediction.explanation}\n\n${prediction.recommendedAction}${
+                  aiPrediction.aiRecommendations ? '\n\nAI Recommendations:\n' + aiPrediction.aiRecommendations.join('\n') : ''
+                }${
+                  aiPrediction.suspiciousPatterns ? '\n\nSuspicious Patterns:\n' + aiPrediction.suspiciousPatterns.join('\n') : ''
+                }${
+                  prediction.detectedPatterns.length > 0 ? '\n\nDetected Patterns:\n' + prediction.detectedPatterns.map(p => p.type).join('\n') : ''
+                }`;
+                
                 return (
-                  <div key={prediction.transactionId} className={`p-3 rounded-lg transition-colors duration-300 ${
-                    isDark 
-                      ? 'bg-gray-700/50' 
-                      : 'bg-gray-50 hover:bg-gray-100'
-                  }`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center space-x-2">
-                        <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${getRiskColor(prediction.riskLevel)}`}>
-                          {prediction.riskLevel}
-                        </span>
-                        {aiPrediction.aiAnalysis && (
-                          <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded font-medium">
-                            AI Enhanced
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <p className={`text-xs ${
-                          isDark ? 'text-gray-400' : 'text-gray-600'
-                        }`}>Risk Score</p>
-                        <p className={`text-sm font-medium ${
-                          isDark ? 'text-white' : 'text-gray-900'
-                        }`}>{(prediction.riskScore * 100).toFixed(1)}%</p>
-                        {aiPrediction.aiConfidence && (
-                          <p className={`text-xs ${
-                            isDark ? 'text-blue-400' : 'text-blue-600'
-                          }`}>AI: {aiPrediction.aiConfidence}%</p>
-                        )}
-                      </div>
-                    </div>
-                    <p className={`text-sm mb-1 ${
-                      isDark ? 'text-white' : 'text-gray-900'
-                    }`}>{prediction.explanation}</p>
-                    <p className={`text-xs ${
-                      isDark ? 'text-gray-400' : 'text-gray-600'
-                    }`}>{prediction.recommendedAction}</p>
-                    
-                    {/* AI Recommendations */}
-                    {aiPrediction.aiRecommendations && aiPrediction.aiRecommendations.length > 0 && (
-                      <div className="mt-2">
-                        <p className={`text-xs ${
-                          isDark ? 'text-blue-400' : 'text-blue-600'
-                        }`}>AI Recommendations:</p>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {aiPrediction.aiRecommendations.slice(0, 2).map((rec, index) => (
-                            <span key={index} className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded">
-                              {rec.substring(0, 20)}...
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Suspicious Patterns */}
-                    {aiPrediction.suspiciousPatterns && aiPrediction.suspiciousPatterns.length > 0 && (
-                      <div className="mt-2">
-                        <p className={`text-xs ${
-                          isDark ? 'text-red-400' : 'text-red-600'
-                        }`}>Suspicious Patterns:</p>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {aiPrediction.suspiciousPatterns.slice(0, 2).map((pattern, index) => (
-                            <span key={index} className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded">
-                              {pattern.substring(0, 15)}...
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Traditional Detected Patterns */}
-                    {prediction.detectedPatterns.length > 0 && (
-                      <div className="mt-2">
-                        <p className={`text-xs ${
-                          isDark ? 'text-gray-400' : 'text-gray-600'
-                        }`}>Detected Patterns:</p>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {prediction.detectedPatterns.map((pattern, index) => (
-                            <span key={index} className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded">
-                              {pattern.type}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <AIResponseCard
+                    key={prediction.transactionId}
+                    content={content}
+                    type="fraud"
+                    confidence={aiPrediction.aiConfidence || (prediction.riskScore * 100)}
+                    title={`Risk Level: ${prediction.riskLevel.toUpperCase()} (${(prediction.riskScore * 100).toFixed(1)}%)`}
+                    maxLength={200}
+                  />
                 );
               })
             )}

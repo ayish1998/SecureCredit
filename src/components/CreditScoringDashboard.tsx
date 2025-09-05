@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Users, FileText, Download, Plus, Edit, Trash2, Eye, AlertCircle, CheckCircle, Clock, DollarSign } from 'lucide-react';
+import { TrendingUp, Users, FileText, Download, Plus, Edit, Trash2, Eye, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface CreditProfile {
   id: string;
@@ -26,6 +27,7 @@ interface CreditReport {
 }
 
 export const CreditScoringDashboard: React.FC = () => {
+  const { isDark } = useTheme();
   const [creditProfiles, setCreditProfiles] = useState<CreditProfile[]>([]);
   const [reports, setReports] = useState<CreditReport[]>([]);
   const [selectedProfiles, setSelectedProfiles] = useState<string[]>([]);
@@ -228,8 +230,8 @@ export const CreditScoringDashboard: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white">Credit Scoring Dashboard</h2>
-          <p className="text-gray-400 text-sm sm:text-base">AI-powered credit assessment for mobile money users</p>
+          <h2 className={`text-xl sm:text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Credit Scoring Dashboard</h2>
+          <p className={`text-sm sm:text-base ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>AI-powered credit assessment for mobile money users</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <button
@@ -252,21 +254,21 @@ export const CreditScoringDashboard: React.FC = () => {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-        <div className="bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-700">
+        <div className={`rounded-xl p-4 sm:p-6 border ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs sm:text-sm text-gray-400">Total Profiles</p>
-              <p className="text-lg sm:text-2xl font-bold text-white">{creditProfiles.length}</p>
+              <p className={`text-xs sm:text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Total Profiles</p>
+              <p className={`text-lg sm:text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{creditProfiles.length}</p>
             </div>
             <Users className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400" />
           </div>
         </div>
         
-        <div className="bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-700">
+        <div className={`rounded-xl p-4 sm:p-6 border ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs sm:text-sm text-gray-400">Avg Score</p>
-              <p className="text-lg sm:text-2xl font-bold text-white">
+              <p className={`text-xs sm:text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Avg Score</p>
+              <p className={`text-lg sm:text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {Math.round(creditProfiles.reduce((sum, p) => sum + p.score, 0) / creditProfiles.length || 0)}
               </p>
             </div>
@@ -274,10 +276,10 @@ export const CreditScoringDashboard: React.FC = () => {
           </div>
         </div>
         
-        <div className="bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-700">
+        <div className={`rounded-xl p-4 sm:p-6 border ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs sm:text-sm text-gray-400">Low Risk</p>
+              <p className={`text-xs sm:text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Low Risk</p>
               <p className="text-lg sm:text-2xl font-bold text-green-400">
                 {creditProfiles.filter(p => p.risk === 'Low').length}
               </p>
@@ -286,10 +288,10 @@ export const CreditScoringDashboard: React.FC = () => {
           </div>
         </div>
         
-        <div className="bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-700">
+        <div className={`rounded-xl p-4 sm:p-6 border ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs sm:text-sm text-gray-400">High Risk</p>
+              <p className={`text-xs sm:text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>High Risk</p>
               <p className="text-lg sm:text-2xl font-bold text-red-400">
                 {creditProfiles.filter(p => p.risk === 'High').length}
               </p>
@@ -300,10 +302,10 @@ export const CreditScoringDashboard: React.FC = () => {
       </div>
 
       {/* Credit Profiles Table */}
-      <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
-        <div className="p-4 sm:p-6 border-b border-gray-700">
+      <div className={`rounded-xl border overflow-hidden ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}>
+        <div className={`p-4 sm:p-6 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <h3 className="text-lg font-semibold text-white">Credit Profiles</h3>
+            <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Credit Profiles</h3>
             <div className="flex flex-col sm:flex-row gap-2">
               {selectedProfiles.length > 0 && (
                 <button
@@ -319,7 +321,7 @@ export const CreditScoringDashboard: React.FC = () => {
         
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-700/50">
+            <thead className={isDark ? 'bg-gray-700/50' : 'bg-gray-50'}>
               <tr>
                 <th className="px-3 sm:px-6 py-3 text-left">
                   <input
@@ -332,32 +334,32 @@ export const CreditScoringDashboard: React.FC = () => {
                         setSelectedProfiles([]);
                       }
                     }}
-                    className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-600 rounded"
+                    className={`w-4 h-4 text-blue-600 rounded ${isDark ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}`}
                   />
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   Customer
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   Score
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   Risk
                 </th>
-                <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                <th className={`hidden sm:table-cell px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   Trend
                 </th>
-                <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                <th className={`hidden lg:table-cell px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   Income
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-700">
+            <tbody className={isDark ? 'divide-y divide-gray-700' : 'divide-y divide-gray-200'}>
               {creditProfiles.map((profile) => (
-                <tr key={profile.id} className="hover:bg-gray-700/30">
+                <tr key={profile.id} className={isDark ? 'hover:bg-gray-700/30' : 'hover:bg-gray-50'}>
                   <td className="px-3 sm:px-6 py-4">
                     <input
                       type="checkbox"
@@ -369,7 +371,7 @@ export const CreditScoringDashboard: React.FC = () => {
                           setSelectedProfiles(prev => prev.filter(id => id !== profile.id));
                         }
                       }}
-                      className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-600 rounded"
+                      className={`w-4 h-4 text-blue-600 rounded ${isDark ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}`}
                     />
                   </td>
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
@@ -380,13 +382,13 @@ export const CreditScoringDashboard: React.FC = () => {
                         </span>
                       </div>
                       <div>
-                        <div className="text-sm font-medium text-white">{profile.name}</div>
-                        <div className="text-xs text-gray-400">{profile.phone}</div>
+                        <div className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{profile.name}</div>
+                        <div className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{profile.phone}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-white">{profile.score}</div>
+                    <div className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{profile.score}</div>
                   </td>
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRiskColor(profile.risk)}`}>
@@ -406,7 +408,7 @@ export const CreditScoringDashboard: React.FC = () => {
                     </div>
                   </td>
                   <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-white">₵{profile.monthlyIncome.toLocaleString()}</div>
+                    <div className={`text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>₵{profile.monthlyIncome.toLocaleString()}</div>
                   </td>
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-1 sm:space-x-2">
@@ -444,21 +446,21 @@ export const CreditScoringDashboard: React.FC = () => {
       </div>
 
       {/* Recent Reports */}
-      <div className="bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-700">
-        <h3 className="text-lg font-semibold text-white mb-4">Recent Reports</h3>
+      <div className={`rounded-xl p-4 sm:p-6 border ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}>
+        <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Recent Reports</h3>
         <div className="space-y-3">
           {reports.length === 0 ? (
-            <p className="text-gray-400 text-center py-8">No reports generated yet</p>
+            <p className={`text-center py-8 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>No reports generated yet</p>
           ) : (
             reports.map((report) => (
-              <div key={report.id} className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
+              <div key={report.id} className={`flex items-center justify-between p-3 rounded-lg ${isDark ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
                 <div className="flex items-center space-x-3">
                   <FileText className="w-5 h-5 text-blue-400" />
                   <div>
-                    <p className="text-sm font-medium text-white">
+                    <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
                       {report.reportType.charAt(0).toUpperCase() + report.reportType.slice(1)} Report
                     </p>
-                    <p className="text-xs text-gray-400">
+                    <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                       {new Date(report.generatedAt).toLocaleString()}
                     </p>
                   </div>
@@ -489,66 +491,66 @@ export const CreditScoringDashboard: React.FC = () => {
       {/* Add Profile Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-900 rounded-2xl border border-gray-700 w-full max-w-md">
-            <div className="p-6 border-b border-gray-700">
-              <h3 className="text-lg font-semibold text-white">Add New Credit Profile</h3>
+          <div className={`rounded-2xl border w-full max-w-md ${isDark ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200 shadow-xl'}`}>
+            <div className={`p-6 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Add New Credit Profile</h3>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Full Name</label>
                 <input
                   type="text"
                   value={newProfile.name}
                   onChange={(e) => setNewProfile(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                  className={`w-full px-3 py-2 border rounded-lg ${isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
                   placeholder="Enter full name"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Phone Number</label>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Phone Number</label>
                 <input
                   type="tel"
                   value={newProfile.phone}
                   onChange={(e) => setNewProfile(prev => ({ ...prev, phone: e.target.value }))}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                  className={`w-full px-3 py-2 border rounded-lg ${isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
                   placeholder="+233 XX XXX XXXX"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Email (Optional)</label>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Email (Optional)</label>
                 <input
                   type="email"
                   value={newProfile.email}
                   onChange={(e) => setNewProfile(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                  className={`w-full px-3 py-2 border rounded-lg ${isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
                   placeholder="email@example.com"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Monthly Income (GHS)</label>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Monthly Income (GHS)</label>
                 <input
                   type="number"
                   value={newProfile.monthlyIncome}
                   onChange={(e) => setNewProfile(prev => ({ ...prev, monthlyIncome: Number(e.target.value) }))}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                  className={`w-full px-3 py-2 border rounded-lg ${isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
                   placeholder="0"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Location</label>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Location</label>
                 <input
                   type="text"
                   value={newProfile.location}
                   onChange={(e) => setNewProfile(prev => ({ ...prev, location: e.target.value }))}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                  className={`w-full px-3 py-2 border rounded-lg ${isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
                   placeholder="City, Country"
                 />
               </div>
             </div>
-            <div className="p-6 border-t border-gray-700 flex justify-end space-x-3">
+            <div className={`p-6 border-t flex justify-end space-x-3 ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                className={`px-4 py-2 rounded-lg transition-colors ${isDark ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-900'}`}
               >
                 Cancel
               </button>
@@ -566,52 +568,52 @@ export const CreditScoringDashboard: React.FC = () => {
       {/* Edit Profile Modal */}
       {showEditModal && editingProfile && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-900 rounded-2xl border border-gray-700 w-full max-w-md">
-            <div className="p-6 border-b border-gray-700">
-              <h3 className="text-lg font-semibold text-white">Edit Credit Profile</h3>
+          <div className={`rounded-2xl border w-full max-w-md ${isDark ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200 shadow-xl'}`}>
+            <div className={`p-6 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Edit Credit Profile</h3>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Full Name</label>
                 <input
                   type="text"
                   value={editingProfile.name}
                   onChange={(e) => setEditingProfile(prev => prev ? ({ ...prev, name: e.target.value }) : null)}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                  className={`w-full px-3 py-2 border rounded-lg ${isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Phone Number</label>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Phone Number</label>
                 <input
                   type="tel"
                   value={editingProfile.phone}
                   onChange={(e) => setEditingProfile(prev => prev ? ({ ...prev, phone: e.target.value }) : null)}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                  className={`w-full px-3 py-2 border rounded-lg ${isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Monthly Income (GHS)</label>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Monthly Income (GHS)</label>
                 <input
                   type="number"
                   value={editingProfile.monthlyIncome}
                   onChange={(e) => setEditingProfile(prev => prev ? ({ ...prev, monthlyIncome: Number(e.target.value) }) : null)}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                  className={`w-full px-3 py-2 border rounded-lg ${isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Location</label>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Location</label>
                 <input
                   type="text"
                   value={editingProfile.location}
                   onChange={(e) => setEditingProfile(prev => prev ? ({ ...prev, location: e.target.value }) : null)}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                  className={`w-full px-3 py-2 border rounded-lg ${isDark ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
                 />
               </div>
             </div>
-            <div className="p-6 border-t border-gray-700 flex justify-end space-x-3">
+            <div className={`p-6 border-t flex justify-end space-x-3 ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
               <button
                 onClick={() => setShowEditModal(false)}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                className={`px-4 py-2 rounded-lg transition-colors ${isDark ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-900'}`}
               >
                 Cancel
               </button>

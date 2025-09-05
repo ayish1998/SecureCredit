@@ -232,7 +232,9 @@ const AppContent: React.FC = () => {
         } border-r`}
       >
         {/* Sidebar Header */}
-        <div className="flex items-center h-16 flex-shrink-0 px-4 border-b border-gray-200 dark:border-gray-700">
+        <div className={`flex items-center h-16 flex-shrink-0 px-4 border-b ${
+          isDark ? 'border-gray-700' : 'border-gray-200'
+        }`}>
           <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
             <Shield className="w-6 h-6 text-white" />
           </div>
@@ -340,8 +342,10 @@ const AppContent: React.FC = () => {
           <button
             ref={mobileMenuButtonRef}
             type="button"
-            className={`-m-2.5 p-2.5 rounded-md transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-700 ${
-              isDark ? "text-gray-400 hover:text-gray-300" : "text-gray-700 hover:text-gray-900"
+            className={`-m-2.5 p-2.5 rounded-md transition-colors duration-200 ${
+              isDark 
+                ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-300' 
+                : 'hover:bg-gray-100 text-gray-700 hover:text-gray-900'
             } md:hidden`}
             onClick={() => setShowMobileSidebar(true)}
             aria-label="Open sidebar"
@@ -589,7 +593,7 @@ const AppContent: React.FC = () => {
         {/* Welcome Message */}
         <div className={`border-b transition-colors duration-300 ${
           isDark 
-            ? 'bg-gradient-to-r from-blue-600/10 to-purple-600/10 border-gray-700' 
+            ? 'bg-gray-800 border-gray-700' 
             : 'bg-gradient-to-r from-blue-50 to-purple-50 border-gray-200'
         }`}>
           <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
@@ -604,7 +608,9 @@ const AppContent: React.FC = () => {
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <main className={`flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-8 transition-colors duration-300 ${
+          isDark ? 'bg-gray-900' : 'bg-gray-50'
+        }`}>
           <Routes>
             <Route path="/" element={<Dashboard 
               fraudStats={fraudStats} 
