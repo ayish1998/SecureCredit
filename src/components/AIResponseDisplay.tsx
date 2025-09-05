@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTheme } from '../contexts/ThemeContext';
-import { Bot, AlertCircle, CheckCircle, Info, Clock, TrendingUp, Shield, Brain } from 'lucide-react';
+import { AlertCircle, Clock, TrendingUp, Shield, Brain } from 'lucide-react';
 
 interface AIResponseDisplayProps {
   content: string;
@@ -57,47 +57,81 @@ export const AIResponseDisplay: React.FC<AIResponseDisplayProps> = ({
   };
 
   const formatContent = (text: string) => {
+    // Clean up the text first - remove asterisks and fix formatting
+    let cleanText = text
+      .replace(/\*+/g, '') // Remove asterisks
+      .replace(/\n{3,}/g, '\n\n') // Replace multiple newlines with double newlines
+      .trim();
+    
     // Split content into paragraphs and format
-    const paragraphs = text.split('\n\n').filter(p => p.trim());
+    const paragraphs = cleanText.split('\n\n').filter(p => p.trim());
     
     return paragraphs.map((paragraph, index) => {
+      const trimmedParagraph = paragraph.trim();
+      
+      // Skip empty paragraphs
+      if (!trimmedParagraph) return null;
+      
       // Check if it's a list item
-      if (paragraph.trim().startsWith('-') || paragraph.trim().startsWith('•')) {
-        const items = paragraph.split('\n').filter(item => item.trim());
+      if (trimmedParagraph.startsWith('-') || trimmedParagraph.startsWith('•')) {
+        const items = paragraph.split('\n').filter(item => item.trim() && item.replace(/^[-•]\s*/, '').trim());
+        if (items.length === 0) return null; // Skip empty lists
+        
         return (
           <ul key={index} className="space-y-1 ml-4">
-            {items.map((item, itemIndex) => (
-              <li key={itemIndex} className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} flex items-start`}>
-                <span className="mr-2 text-blue-400">•</span>
-                <span>{item.replace(/^[-•]\s*/, '')}</span>
-              </li>
-            ))}
+            {items.map((item, itemIndex) => {
+              const cleanItem = item.replace(/^[-•]\s*/, '').trim();
+              if (!cleanItem) return null;
+              
+              return (
+                <li key={itemIndex} className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} flex items-start`}>
+                  <span className="mr-2 text-blue-400">•</span>
+                  <span>{cleanItem}</span>
+                </li>
+              );
+            }).filter(Boolean)}
           </ul>
         );
       }
       
       // Check if it's a numbered list
-      if (/^\d+\./.test(paragraph.trim())) {
-        const items = paragraph.split('\n').filter(item => item.trim());
+      if (/^\d+\./.test(trimmedParagraph)) {
+        const items = paragraph.split('\n').filter(item => item.trim() && item.replace(/^\d+\.\s*/, '').trim());
+        if (items.length === 0) return null; // Skip empty lists
+        
         return (
           <ol key={index} className="space-y-1 ml-4">
-            {items.map((item, itemIndex) => (
-              <li key={itemIndex} className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} flex items-start`}>
-                <span className="mr-2 text-blue-400 font-medium">{itemIndex + 1}.</span>
-                <span>{item.replace(/^\d+\.\s*/, '')}</span>
-              </li>
-            ))}
+            {items.map((item, itemIndex) => {
+              const cleanItem = item.replace(/^\d+\.\s*/, '').trim();
+              if (!cleanItem) return null;
+              
+              return (
+                <li key={itemIndex} className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} flex items-start`}>
+                  <span className="mr-2 text-blue-400 font-medium">{itemIndex + 1}.</span>
+                  <span>{cleanItem}</span>
+                </li>
+              );
+            }).filter(Boolean)}
           </ol>
+        );
+      }
+      
+      // Check if it's a section header (ends with colon)
+      if (trimmedParagraph.endsWith(':')) {
+        return (
+          <h4 key={index} className={`text-sm font-semibold mt-3 mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            {trimmedParagraph}
+          </h4>
         );
       }
       
       // Regular paragraph
       return (
         <p key={index} className={`text-sm leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-          {paragraph}
+          {trimmedParagraph}
         </p>
       );
-    });
+    }).filter(Boolean); // Remove null entries
   };
 
   return (
@@ -162,12 +196,20 @@ export const AIResponseDisplay: React.FC<AIResponseDisplayProps> = ({
 export const AIResponseCard: React.FC<Omit<AIResponseDisplayProps, 'showHeader' | 'compact'> & { 
   title?: string;
   maxLength?: number;
-}> = ({ content, title, maxLength = 100, ...props }) => {
+}> = ({ content, title, maxLength = 300, ...props }) => {
   const { isDark } = useTheme();
+  const [isExpanded, setIsExpanded] = React.useState(false);
   
-  const truncatedContent = content.length > maxLength 
-    ? content.substring(0, maxLength) + '...' 
-    : content;
+  // Clean up content and handle truncation better
+  const cleanContent = content
+    .replace(/\*+/g, '') // Remove asterisks
+    .replace(/\n{3,}/g, '\n\n') // Replace multiple newlines
+    .trim();
+  
+  const shouldTruncate = cleanContent.length > maxLength;
+  const displayContent = shouldTruncate && !isExpanded 
+    ? cleanContent.substring(0, maxLength).replace(/\s+\S*$/, '') + '...' 
+    : cleanContent;
 
   return (
     <div className={`p-3 rounded-lg border transition-colors duration-300 ${
@@ -178,9 +220,23 @@ export const AIResponseCard: React.FC<Omit<AIResponseDisplayProps, 'showHeader' 
           {title}
         </h5>
       )}
-      <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} leading-relaxed`}>
-        {truncatedContent}
-      </p>
+      <div className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} leading-relaxed`}>
+        {displayContent.split('\n').map((line, index) => (
+          <p key={index} className={index > 0 ? 'mt-1' : ''}>
+            {line.trim()}
+          </p>
+        ))}
+        {shouldTruncate && (
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className={`mt-2 text-xs underline ${
+              isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'
+            }`}
+          >
+            {isExpanded ? 'Show less' : 'Show more'}
+          </button>
+        )}
+      </div>
       {props.confidence !== undefined && (
         <div className="mt-2 flex items-center justify-between">
           <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -196,3 +252,4 @@ export const AIResponseCard: React.FC<Omit<AIResponseDisplayProps, 'showHeader' 
     </div>
   );
 };
+

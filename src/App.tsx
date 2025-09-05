@@ -503,15 +503,28 @@ const AppContent: React.FC = () => {
                   
                   {/* User section at bottom */}
                   <li className="mt-auto">
-                    <div className={`flex items-center gap-x-4 px-3 py-3 text-sm font-semibold leading-6 border-t ${
+                    <div className={`flex items-center justify-between px-3 py-3 text-sm font-semibold leading-6 border-t ${
                       isDark ? "border-gray-700" : "border-gray-200"
                     }`}>
-                      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                        <User className="w-4 h-4 text-white" />
+                      <div className="flex items-center gap-x-3">
+                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                          <User className="w-4 h-4 text-white" />
+                        </div>
+                        <span className={isDark ? "text-white" : "text-gray-900"}>
+                          {user?.firstName} {user?.lastName}
+                        </span>
                       </div>
-                      <span className={isDark ? "text-white" : "text-gray-900"}>
-                        {user?.firstName} {user?.lastName}
-                      </span>
+                      <button
+                        onClick={logout}
+                        className={`p-2 rounded-lg transition-colors ${
+                          isDark
+                            ? "hover:bg-gray-700 text-gray-400 hover:text-white"
+                            : "hover:bg-gray-100 text-gray-600 hover:text-gray-900"
+                        }`}
+                        title="Sign Out"
+                      >
+                        <LogOut className="w-4 h-4" />
+                      </button>
                     </div>
                   </li>
                 </ul>

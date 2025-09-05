@@ -165,6 +165,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         }
       }
 
+
       const insights: AIInsightSummary[] = [
         {
           type: 'fraud',
@@ -175,7 +176,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
           lastUpdated: 'Just now',
           analysis: fraudAnalysis,
           riskLevel: fraudAnalysis?.riskLevel || 'low',
-          recommendations: fraudAnalysis?.recommendations || ['Monitor transaction patterns', 'Verify user identity']
+          recommendations: fraudAnalysis?.recommendations?.length > 0 
+            ? fraudAnalysis.recommendations 
+            : ['Monitor transaction patterns', 'Verify user identity', 'Check for unusual spending']
         },
         {
           type: 'credit',
@@ -186,7 +189,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
           lastUpdated: '2 minutes ago',
           analysis: creditAnalysis,
           riskLevel: creditAnalysis?.riskLevel || 'low',
-          recommendations: creditAnalysis?.recommendations || ['Maintain payment schedule', 'Monitor utilization']
+          recommendations: creditAnalysis?.recommendations?.length > 0 
+            ? creditAnalysis.recommendations 
+            : ['Maintain payment schedule', 'Monitor credit utilization', 'Review credit report']
         },
         {
           type: 'security',
@@ -197,7 +202,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
           lastUpdated: '5 minutes ago',
           analysis: securityAnalysis,
           riskLevel: securityAnalysis?.riskLevel || 'low',
-          recommendations: securityAnalysis?.recommendations || ['Enable 2FA', 'Monitor login patterns']
+          recommendations: securityAnalysis?.recommendations?.length > 0 
+            ? securityAnalysis.recommendations 
+            : ['Enable 2FA', 'Monitor login patterns', 'Update security settings']
         }
       ];
 
@@ -439,16 +446,66 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           {/* AI Insights Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-            {aiInsights.map((insight, index) => (
-              <AIResponseDisplay
-                key={index}
-                content={`${insight.title}\n\n${insight.value}\n\n${insight.recommendations ? insight.recommendations.join('\n') : ''}`}
-                type={insight.type as 'fraud' | 'credit' | 'security'}
-                confidence={insight.confidence}
-                showHeader={true}
-                compact={false}
-              />
-            ))}
+            {aiInsights.map((insight, index) => {
+              // Get recommendations, filtering out empty ones and providing fallbacks
+              const recommendations = insight.recommendations?.filter(rec => {
+                const cleanRec = rec?.trim();
+                // Filter out empty strings, single words, or incomplete phrases
+                return cleanRec && 
+                       cleanRec.length > 3 && 
+                       !cleanRec.endsWith(':') && 
+                       !cleanRec.includes('for prevention:') &&
+                       !cleanRec.includes('recommendations:') &&
+                       cleanRec !== '•';
+              }) || [];
+              
+              const fallbackRecommendations = {
+                fraud: [
+                  'Monitor transaction patterns for unusual activity',
+                  'Verify user identity through multi-factor authentication',
+                  'Check for unusual spending patterns and locations',
+                  'Implement real-time fraud detection alerts'
+                ],
+                credit: [
+                  'Maintain consistent payment schedule',
+                  'Monitor credit utilization ratios',
+                  'Review credit report for accuracy',
+                  'Consider credit building strategies'
+                ],
+                security: [
+                  'Enable two-factor authentication',
+                  'Monitor login patterns and device access',
+                  'Update security settings regularly',
+                  'Review account permissions and access levels'
+                ]
+              };
+              
+              const finalRecommendations = recommendations.length > 0 
+                ? recommendations 
+                : fallbackRecommendations[insight.type as keyof typeof fallbackRecommendations] || [];
+              
+              // Create better structured content
+              const content = [
+                `${insight.title}: ${insight.value}`,
+                '',
+                `Risk Level: ${insight.riskLevel?.toUpperCase() || 'UNKNOWN'}`,
+                `Last Updated: ${insight.lastUpdated}`,
+                '',
+                'AI Recommendations:',
+                ...finalRecommendations.map(rec => `• ${rec}`)
+              ].join('\n');
+              
+              return (
+                <AIResponseDisplay
+                  key={index}
+                  content={content}
+                  type={insight.type as 'fraud' | 'credit' | 'security'}
+                  confidence={insight.confidence}
+                  showHeader={true}
+                  compact={false}
+                />
+              );
+            })}
           </div>
 
           {/* AI Analysis History */}

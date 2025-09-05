@@ -436,7 +436,17 @@ export class AIService {
         const text = match[1];
         const lines = text.split('\n')
           .map(line => line.replace(/^[-*•]\s*/, '').trim())
-          .filter(line => line.length > 0);
+          .filter(line => {
+            // Filter out empty lines, incomplete phrases, and malformed content
+            return line.length > 3 && 
+                   !line.endsWith(':') && 
+                   !line.includes('for prevention:') &&
+                   !line.includes('recommendations:') &&
+                   !line.includes('suggestions:') &&
+                   !line.includes('mitigation:') &&
+                   line !== '•' &&
+                   !line.match(/^[•\-\*]+$/); // Filter out lines that are just bullet points
+          });
         items.push(...lines);
       }
     }

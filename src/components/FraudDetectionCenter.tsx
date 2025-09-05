@@ -1217,30 +1217,50 @@ export const FraudDetectionCenter: React.FC = () => {
                 isDark ? 'text-gray-400' : 'text-gray-600'
               }`}>No active alerts</p>
             ) : (
-              realtimeAlerts.map((alert) => (
-                <div key={alert.id} className={`p-3 rounded-lg border-l-4 border-red-500 transition-colors duration-300 ${
-                  isDark 
-                    ? 'bg-gray-700/50' 
-                    : 'bg-red-50 hover:bg-red-100'
-                }`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${getRiskColor(alert.severity)}`}>
-                      {alert.severity}
-                    </span>
-                    <span className={`text-xs ${
-                      isDark ? 'text-gray-400' : 'text-gray-600'
+              realtimeAlerts.map((alert) => {
+                const [isExpanded, setIsExpanded] = useState(false);
+                const shouldTruncate = alert.message.length > 100;
+                const displayMessage = shouldTruncate && !isExpanded 
+                  ? alert.message.substring(0, 100) + '...' 
+                  : alert.message;
+
+                return (
+                  <div key={alert.id} className={`p-3 rounded-lg border-l-4 border-red-500 transition-colors duration-300 ${
+                    isDark 
+                      ? 'bg-gray-700/50' 
+                      : 'bg-red-50 hover:bg-red-100'
+                  }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${getRiskColor(alert.severity)}`}>
+                        {alert.severity}
+                      </span>
+                      <span className={`text-xs ${
+                        isDark ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
+                        {new Date(alert.timestamp).toLocaleTimeString()}
+                      </span>
+                    </div>
+                    <div className={`text-sm ${
+                      isDark ? 'text-white' : 'text-gray-900'
                     }`}>
-                      {new Date(alert.timestamp).toLocaleTimeString()}
-                    </span>
+                      {displayMessage}
+                      {shouldTruncate && (
+                        <button
+                          onClick={() => setIsExpanded(!isExpanded)}
+                          className={`ml-2 text-xs underline ${
+                            isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'
+                          }`}
+                        >
+                          {isExpanded ? 'Show less' : 'Show more'}
+                        </button>
+                      )}
+                    </div>
+                    <p className={`text-xs mt-1 ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>Transaction: {alert.transactionId}</p>
                   </div>
-                  <p className={`text-sm ${
-                    isDark ? 'text-white' : 'text-gray-900'
-                  }`}>{alert.message}</p>
-                  <p className={`text-xs mt-1 ${
-                    isDark ? 'text-gray-400' : 'text-gray-600'
-                  }`}>Transaction: {alert.transactionId}</p>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -1297,7 +1317,7 @@ export const FraudDetectionCenter: React.FC = () => {
                     type="fraud"
                     confidence={aiPrediction.aiConfidence || (prediction.riskScore * 100)}
                     title={`Risk Level: ${prediction.riskLevel.toUpperCase()} (${(prediction.riskScore * 100).toFixed(1)}%)`}
-                    maxLength={200}
+                    maxLength={500}
                   />
                 );
               })
