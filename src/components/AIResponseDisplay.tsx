@@ -63,111 +63,164 @@ export const AIResponseDisplay: React.FC<AIResponseDisplayProps> = ({
       .replace(/\n{3,}/g, '\n\n') // Replace multiple newlines with double newlines
       .trim();
     
-    // Split content into paragraphs and format
-    const paragraphs = cleanText.split('\n\n').filter(p => p.trim());
+    // Split content into lines first, then group into sections
+    const lines = cleanText.split('\n').map(line => line.trim()).filter(line => line);
     
-    return paragraphs.map((paragraph, index) => {
-      const trimmedParagraph = paragraph.trim();
+    const sections: JSX.Element[] = [];
+    let currentSection: string[] = [];
+    let sectionIndex = 0;
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
       
-      // Skip empty paragraphs
-      if (!trimmedParagraph) return null;
-      
-      // Check if it's a list item
-      if (trimmedParagraph.startsWith('-') || trimmedParagraph.startsWith('•')) {
-        const items = paragraph.split('\n').filter(item => item.trim() && item.replace(/^[-•]\s*/, '').trim());
-        if (items.length === 0) return null; // Skip empty lists
+      // Check if this line is a section header (contains colon and is not a list item)
+      if (line.includes(':') && !line.startsWith('•') && !line.startsWith('-') && !line.match(/^\d+\./)) {
+        // Process previous section if it exists
+        if (currentSection.length > 0) {
+          sections.push(renderSection(currentSection, sectionIndex++));
+          currentSection = [];
+        }
         
-        return (
-          <ul key={index} className="space-y-1 ml-4">
-            {items.map((item, itemIndex) => {
-              const cleanItem = item.replace(/^[-•]\s*/, '').trim();
-              if (!cleanItem) return null;
-              
-              return (
-                <li key={itemIndex} className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} flex items-start`}>
-                  <span className="mr-2 text-blue-400">•</span>
-                  <span>{cleanItem}</span>
-                </li>
-              );
-            }).filter(Boolean)}
-          </ul>
+        // Add header
+        sections.push(
+          <div key={`header-${sectionIndex}`} className="mb-3">
+            <h4 className={`text-sm font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {line}
+            </h4>
+          </div>
         );
+        sectionIndex++;
+      } else {
+        currentSection.push(line);
       }
-      
-      // Check if it's a numbered list
-      if (/^\d+\./.test(trimmedParagraph)) {
-        const items = paragraph.split('\n').filter(item => item.trim() && item.replace(/^\d+\.\s*/, '').trim());
-        if (items.length === 0) return null; // Skip empty lists
-        
-        return (
-          <ol key={index} className="space-y-1 ml-4">
-            {items.map((item, itemIndex) => {
-              const cleanItem = item.replace(/^\d+\.\s*/, '').trim();
-              if (!cleanItem) return null;
-              
-              return (
-                <li key={itemIndex} className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} flex items-start`}>
-                  <span className="mr-2 text-blue-400 font-medium">{itemIndex + 1}.</span>
-                  <span>{cleanItem}</span>
-                </li>
-              );
-            }).filter(Boolean)}
-          </ol>
-        );
-      }
-      
-      // Check if it's a section header (ends with colon)
-      if (trimmedParagraph.endsWith(':')) {
-        return (
-          <h4 key={index} className={`text-sm font-semibold mt-3 mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            {trimmedParagraph}
-          </h4>
-        );
-      }
-      
-      // Regular paragraph
+    }
+    
+    // Process remaining section
+    if (currentSection.length > 0) {
+      sections.push(renderSection(currentSection, sectionIndex));
+    }
+    
+    return sections;
+  };
+
+  const renderSection = (lines: string[], index: number) => {
+    if (lines.length === 0) return null;
+    
+    // Check if all lines are list items
+    const isListSection = lines.every(line => line.startsWith('•') || line.startsWith('-'));
+    
+    if (isListSection) {
       return (
-        <p key={index} className={`text-sm leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-          {trimmedParagraph}
-        </p>
+        <ul key={`list-${index}`} className="space-y-2 mb-4">
+          {lines.map((line, itemIndex) => {
+            const cleanItem = line.replace(/^[-•]\s*/, '').trim();
+            if (!cleanItem) return null;
+            
+            return (
+              <li key={itemIndex} className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} flex items-start leading-relaxed`}>
+                <span className="mr-3 text-blue-400 font-bold mt-0.5">•</span>
+                <span className="flex-1">{cleanItem}</span>
+              </li>
+            );
+          }).filter(Boolean)}
+        </ul>
       );
-    }).filter(Boolean); // Remove null entries
+    }
+    
+    // Check if it's a numbered list
+    const isNumberedList = lines.every(line => /^\d+\./.test(line));
+    
+    if (isNumberedList) {
+      return (
+        <ol key={`numbered-${index}`} className="space-y-2 mb-4">
+          {lines.map((line, itemIndex) => {
+            const cleanItem = line.replace(/^\d+\.\s*/, '').trim();
+            if (!cleanItem) return null;
+            
+            return (
+              <li key={itemIndex} className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} flex items-start leading-relaxed`}>
+                <span className="mr-3 text-blue-400 font-bold mt-0.5">{itemIndex + 1}.</span>
+                <span className="flex-1">{cleanItem}</span>
+              </li>
+            );
+          }).filter(Boolean)}
+        </ol>
+      );
+    }
+    
+    // Regular paragraphs - check for key-value pairs
+    return (
+      <div key={`section-${index}`} className="space-y-3 mb-4">
+        {lines.map((line, lineIndex) => {
+          // Check if it's a key-value pair (contains colon but not at the end)
+          if (line.includes(':') && !line.endsWith(':')) {
+            const [key, ...valueParts] = line.split(':');
+            const value = valueParts.join(':').trim();
+            
+            return (
+              <div key={lineIndex} className="flex items-start justify-between py-1">
+                <span className={`text-sm font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  {key.trim()}:
+                </span>
+                <span className={`text-sm font-semibold ml-3 ${
+                  value.includes('%') ? 'text-green-400' :
+                  value.toUpperCase().includes('LOW') ? 'text-green-400' :
+                  value.toUpperCase().includes('HIGH') ? 'text-red-400' :
+                  value.toUpperCase().includes('MEDIUM') ? 'text-yellow-400' :
+                  value.toUpperCase().includes('CRITICAL') ? 'text-red-500' :
+                  isDark ? 'text-white' : 'text-gray-900'
+                }`}>
+                  {value}
+                </span>
+              </div>
+            );
+          }
+          
+          // Regular paragraph
+          return (
+            <p key={lineIndex} className={`text-sm leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+              {line}
+            </p>
+          );
+        })}
+      </div>
+    );
   };
 
   return (
-    <div className={`rounded-xl border transition-colors duration-300 ${getTypeColor()} ${
-      isDark ? 'bg-gray-800/50' : 'bg-white/50'
-    } ${compact ? 'p-3' : 'p-4 sm:p-6'}`}>
+    <div className={`card-modern hover-lift animate-fade-in ${getTypeColor()} ${
+      isDark ? 'bg-gray-800/80' : 'bg-white/90'
+    } ${compact ? 'p-4' : 'p-6 sm:p-8'} backdrop-blur-xl`}>
       {showHeader && (
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2">
-            <div className={`p-2 rounded-lg ${isDark ? 'bg-gray-700/50' : 'bg-gray-100/50'}`}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <div className={`p-3 rounded-xl glass ${isDark ? 'bg-gray-700/30' : 'bg-gray-100/30'} animate-glow`}>
               {getTypeIcon()}
             </div>
             <div>
-              <h4 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              <h4 className={`text-base font-bold text-gradient-primary`}>
                 AI Analysis
               </h4>
-              <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                 {type.charAt(0).toUpperCase() + type.slice(1)} Assessment
               </p>
             </div>
           </div>
           
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-4">
             {confidence !== undefined && (
-              <div className="text-right">
-                <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Confidence</p>
-                <p className={`text-sm font-medium ${getConfidenceColor(confidence)}`}>
+              <div className={`text-right p-3 rounded-xl glass ${isDark ? 'bg-gray-700/20' : 'bg-gray-100/20'}`}>
+                <p className={`text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Confidence</p>
+                <p className={`text-lg font-bold ${getConfidenceColor(confidence)}`}>
                   {confidence.toFixed(1)}%
                 </p>
               </div>
             )}
             
             {processingTime !== undefined && (
-              <div className="text-right">
-                <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Processing</p>
-                <p className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+              <div className={`text-right p-3 rounded-xl glass ${isDark ? 'bg-gray-700/20' : 'bg-gray-100/20'}`}>
+                <p className={`text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Processing</p>
+                <p className={`text-lg font-bold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   {processingTime.toFixed(2)}s
                 </p>
               </div>
@@ -176,14 +229,16 @@ export const AIResponseDisplay: React.FC<AIResponseDisplayProps> = ({
         </div>
       )}
 
-      <div className="space-y-3">
-        {formatContent(content)}
+      <div className={`space-y-4 p-5 rounded-xl ${isDark ? 'bg-gray-900/30' : 'bg-gray-50/50'} backdrop-blur-sm border ${isDark ? 'border-gray-700/30' : 'border-gray-200/30'}`}>
+        <div className="space-y-3">
+          {formatContent(content)}
+        </div>
       </div>
 
       {timestamp && (
-        <div className="mt-4 pt-3 border-t border-gray-200/20">
-          <div className="flex items-center space-x-2 text-xs text-gray-500">
-            <Clock className="w-3 h-3" />
+        <div className={`mt-6 pt-4 border-t ${isDark ? 'border-gray-700/30' : 'border-gray-200/30'}`}>
+          <div className={`flex items-center space-x-2 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+            <Clock className="w-4 h-4" />
             <span>{timestamp.toLocaleString()}</span>
           </div>
         </div>
@@ -212,11 +267,11 @@ export const AIResponseCard: React.FC<Omit<AIResponseDisplayProps, 'showHeader' 
     : cleanContent;
 
   return (
-    <div className={`p-3 rounded-lg border transition-colors duration-300 ${
-      isDark ? 'bg-gray-700/30 border-gray-600' : 'bg-gray-50 border-gray-200'
-    }`}>
+    <div className={`p-4 rounded-xl border transition-all duration-300 hover-lift ${
+      isDark ? 'bg-gray-800/50 border-gray-600/50 backdrop-blur-xl' : 'bg-white/80 border-gray-200/50 backdrop-blur-xl'
+    } shadow-lg hover:shadow-xl`}>
       {title && (
-        <h5 className={`text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+        <h5 className={`text-base font-semibold mb-3 text-gradient-primary`}>
           {title}
         </h5>
       )}
@@ -229,8 +284,10 @@ export const AIResponseCard: React.FC<Omit<AIResponseDisplayProps, 'showHeader' 
         {shouldTruncate && (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className={`mt-2 text-xs underline ${
-              isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'
+            className={`mt-3 px-3 py-1 text-xs font-medium rounded-full transition-all duration-300 transform hover:scale-105 ${
+              isDark 
+                ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30' 
+                : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
             }`}
           >
             {isExpanded ? 'Show less' : 'Show more'}
@@ -238,12 +295,15 @@ export const AIResponseCard: React.FC<Omit<AIResponseDisplayProps, 'showHeader' 
         )}
       </div>
       {props.confidence !== undefined && (
-        <div className="mt-2 flex items-center justify-between">
-          <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-            AI Confidence: {props.confidence.toFixed(1)}%
-          </span>
+        <div className={`mt-4 pt-3 border-t ${isDark ? 'border-gray-700/30' : 'border-gray-200/30'} flex items-center justify-between`}>
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+              AI Confidence: <span className="text-gradient-success">{props.confidence.toFixed(1)}%</span>
+            </span>
+          </div>
           {props.processingTime !== undefined && (
-            <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+            <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
               {props.processingTime.toFixed(2)}s
             </span>
           )}
