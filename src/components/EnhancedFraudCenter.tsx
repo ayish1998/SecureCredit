@@ -276,6 +276,28 @@ export const EnhancedFraudCenter: React.FC = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  const loadSampleData = () => {
+    const sampleData = `amount,type,location,user_id,device_id,agent_id,merchant_category,pin_attempts,device_trust,network_trust
+1500,send_money,Accra,kwame_asante,device_001,agent_accra_001,transfer,1,0.95,0.92
+2800,cash_out,Lagos,suspicious_user_001,new_device_001,unverified_agent_001,unknown,4,0.15,0.25
+450,bill_payment,Kumasi,ama_osei,device_002,agent_kumasi_001,utilities,1,0.88,0.91
+3500,send_money,Unknown_Location,victim_001,compromised_device_001,blacklisted_agent_001,investment,6,0.05,0.12
+750,airtime,Tamale,kofi_mensah,device_003,agent_tamale_001,telecom,1,0.92,0.89
+5000,cash_out,Foreign_IP,fraud_attempt_001,stolen_device_001,fake_agent_001,lottery,8,0.02,0.08
+320,bill_payment,Cape_Coast,akosua_boateng,device_004,agent_coast_001,utilities,1,0.87,0.93
+1200,send_money,Tema,yaw_oppong,device_005,agent_tema_001,transfer,2,0.78,0.85
+4200,cash_out,Suspicious_Location,scammer_001,cloned_device_001,criminal_agent_001,ponzi,5,0.03,0.15
+680,airtime,Ho,abena_mensah,device_006,agent_ho_001,telecom,1,0.91,0.88
+2100,send_money,Takoradi,nana_asante,device_007,agent_takoradi_001,family,1,0.89,0.87
+6500,cash_out,Call_Center_Scam,elderly_victim_001,social_eng_device_001,fake_support_001,emergency,7,0.01,0.05
+890,bill_payment,Sunyani,kwaku_owusu,device_008,agent_sunyani_001,utilities,1,0.86,0.90
+1800,send_money,SIM_Swap_Location,sim_victim_001,unauthorized_device_001,compromised_agent_001,urgent,9,0.00,0.10
+540,airtime,Bolgatanga,fatima_ibrahim,device_009,agent_bolga_001,telecom,1,0.93,0.94`;
+    
+    setCsvData(sampleData);
+    setUploadedFileName('sample_african_transactions.csv');
+  };
+
   const filteredTransactions = transactions.filter(transaction => {
     const matchesSearch = transaction.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          transaction.location.toLowerCase().includes(searchTerm.toLowerCase());
@@ -651,18 +673,38 @@ ${selectedTransaction.aiAnalysis.recommendations.map(r => `• ${r}`).join('\n')
                       </div>
                     )}
 
-                    {/* Sample CSV Download */}
-                    <div className="flex items-center justify-between">
-                      <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                        Need a sample format?
-                      </span>
-                      <button
-                        onClick={downloadSampleCSV}
-                        className="btn-secondary text-sm flex items-center space-x-2"
-                      >
-                        <Download className="w-4 h-4" />
-                        <span>Download Sample</span>
-                      </button>
+                    {/* Sample Data Actions */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                          Need sample data to test?
+                        </span>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={loadSampleData}
+                            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium px-4 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 text-sm flex items-center space-x-2"
+                          >
+                            <FileText className="w-4 h-4" />
+                            <span>Load Sample</span>
+                          </button>
+                          
+                          <button
+                            onClick={downloadSampleCSV}
+                            className="bg-white/10 hover:bg-white/20 dark:bg-gray-800/50 dark:hover:bg-gray-700/50 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300 font-medium px-4 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 text-sm flex items-center space-x-2"
+                          >
+                            <Download className="w-4 h-4" />
+                            <span>Download</span>
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className={`p-3 rounded-lg ${
+                        isDark ? 'bg-blue-900/20 border border-blue-500/30' : 'bg-blue-50 border border-blue-200'
+                      }`}>
+                        <p className={`text-xs ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
+                          💡 <strong>Tip:</strong> Click "Load Sample" to instantly load realistic African mobile money transaction data for testing the AI fraud detection system.
+                        </p>
+                      </div>
                     </div>
                   </div>
 
